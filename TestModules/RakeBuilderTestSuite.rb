@@ -69,26 +69,20 @@ class RakeBuilderTestSuite < Test::Unit::TestCase
             FileUtils.rm "hello.rb"
         end
 
-#        should "download file when doesn't exist" do
-#            web_require "hello.rb"
-#            assert_equal("Hello World!", helloWorld)
-#        end
+        should "download file when doesn't exist" do
+            web_require "https://raw.githubusercontent.com/chaos0x8/rake-builder/master/TestModules/inc/hello.rb"
+            assert_equal(false, File.zero?("hello.eb"))
+            assert_equal("Hello World!", helloWorld)
+        end
 
         context nil do
             setup do
-                f = File.open "hello.rb", "w"
-                f.write "#!/usr/bin/ruby\n"
-                f.write "\n"
-                f.write "def helloWorld\n"
-                f.write "    'nop'\n"
-                f.write "end\n"
-                f.write "\n"
-                f.close
+                File.open("hello.rb", "w").close
             end
 
             should "include file when already exists" do
-                web_require "hello.rb"
-                assert_equal("nop", helloWorld)
+                web_require "https://raw.githubusercontent.com/chaos0x8/rake-builder/master/TestModules/inc/hello.rb"
+                assert_equal(true, File.zero?("hello.rb"))
             end
         end
     end
