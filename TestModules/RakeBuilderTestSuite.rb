@@ -21,6 +21,7 @@
 require 'test/unit'
 require 'shoulda'
 require 'fileutils'
+require_relative 'web_require'
 
 class RakeBuilderTestSuite < Test::Unit::TestCase
     def teardown
@@ -60,6 +61,35 @@ class RakeBuilderTestSuite < Test::Unit::TestCase
             assert_equal(true, File.exist?("lib/libapp2.a"))
             assert_equal(true, File.exist?("bin/app2"))
             assert_equal("Library: Hello World!", `bin/app2`.chomp)
+        end
+    end
+
+    context "web_require:" do
+        teardown do
+            FileUtils.rm "hello.rb"
+        end
+
+#        should "download file when doesn't exist" do
+#            web_require "hello.rb"
+#            assert_equal("Hello World!", helloWorld)
+#        end
+
+        context nil do
+            setup do
+                f = File.open "hello.rb", "w"
+                f.write "#!/usr/bin/ruby\n"
+                f.write "\n"
+                f.write "def helloWorld\n"
+                f.write "    'nop'\n"
+                f.write "end\n"
+                f.write "\n"
+                f.close
+            end
+
+            should "include file when already exists" do
+                web_require "hello.rb"
+                assert_equal("nop", helloWorld)
+            end
         end
     end
 end
