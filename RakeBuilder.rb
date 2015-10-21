@@ -122,25 +122,35 @@ class Target
     attr_accessor :libs
     attr_accessor :dependencies
 
+    @@tasks = Set.new
+
     def initialize &block
         block.call self
 
         createFileRules
         createTargetRule
+        @@tasks.add @name
     end
 
+    def self.tasks patern
+        result = Array.new
+        @@tasks.each do |t|
+            result.push t if t.match(patern)
+        end
+        result
+    end
+
+private
     def flags
         @flags ||= Array.new
         @extraFlags ||= Array.new
         (@flags + @extraFlags).uniq.join(" ")
     end
-    private :flags
 
     def flagsOnly
         @flags ||= Array.new
         @flags.join(" ")
     end
-    private :flagsOnly
 
     def includes
         result = Set.new
@@ -158,7 +168,6 @@ class Target
 
         result.to_a.join(" ")
     end
-    private :includes
 
     def libs
         result = Set.new
@@ -175,13 +184,11 @@ class Target
 
         result.to_a.join(" ")
     end
-    private :libs
 
     def dependencies
         @dependencies ||= Array.new
         @dependencies
     end
-    private :dependencies
 
     def createFileRules
         @files.each do |cppName|
@@ -208,10 +215,10 @@ class Target
             end
         end
     end
-    private :createFileRules
 end
 
 class Application < Target
+private
     def createTargetRule
         dirName = File.dirname(@name)
         directory dirName
@@ -220,10 +227,10 @@ class Application < Target
             sh "g++ #{flags} #{objs(@files).join(" ")} -o #{@name} #{libs}"
         end
     end
-    private :createTargetRule
 end
 
 class Library < Target
+private
     def createTargetRule
         dirName = File.dirname(@name)
         directory dirName
@@ -232,7 +239,6 @@ class Library < Target
             sh "ar vsr #{@name} #{objs(@files).join(" ")}"
         end
     end
-    private :createTargetRule
 end
 
 class SharedLibrary < Target
@@ -241,6 +247,7 @@ class SharedLibrary < Target
         super
     end
 
+private
     def createTargetRule
         dirName = File.dirname(@name)
         directory dirName
@@ -249,5 +256,4 @@ class SharedLibrary < Target
             sh "g++ -shared #{flagsOnly} #{objs(@files).join(" ")} -o #{name}"
         end
     end
-    private :createTargetRule
 end
