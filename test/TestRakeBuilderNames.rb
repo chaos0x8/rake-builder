@@ -32,6 +32,11 @@ class TestRakeBuilderNames < Test::Unit::TestCase
             assert_equal(['1', 'filename'], Names[1, 'filename'])
         }
 
+
+        should('extract names from nested arrays') {
+            assert_equal(['a', 'b', 'c', 'd'], Names['a', ['b', 'c'], ['d']])
+        }
+
         context('with some target') {
             setup {
                 @target = mock()

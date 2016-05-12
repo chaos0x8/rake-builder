@@ -83,7 +83,9 @@ module RakeBuilder
     class Names
         def self.[] *args
             args.collect { |a|
-                if a.kind_of? GitSubmodule
+                if a.kind_of? Array
+                    Names[*a]
+                elsif a.kind_of? GitSubmodule
                     a.libs.collect { |l| "#{a.name}/#{l}" }
                 elsif a.kind_of? Target
                     a.name
