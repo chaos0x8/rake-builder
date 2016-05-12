@@ -89,6 +89,8 @@ module RakeBuilder
                     a.libs.collect { |l| "#{a.name}/#{l}" }
                 elsif a.kind_of? Target
                     a.name
+                elsif a.kind_of? Symbol
+                    a
                 else
                     a.to_s
                 end

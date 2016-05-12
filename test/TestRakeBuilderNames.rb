@@ -32,6 +32,9 @@ class TestRakeBuilderNames < Test::Unit::TestCase
             assert_equal(['1', 'filename'], Names[1, 'filename'])
         }
 
+        should('not convert symbols to string') {
+            assert_equal(['string', :symbol], Names['string', :symbol])
+        }
 
         should('extract names from nested arrays') {
             assert_equal(['a', 'b', 'c', 'd'], Names['a', ['b', 'c'], ['d']])
