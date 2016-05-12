@@ -58,5 +58,43 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
             assert_equal('dir', dirname)
         }
     }
+
+    class TestableTarget < Target
+        def initialize &block
+            super
+        end
+
+        def peek symbol
+            send(symbol)
+        end
+    end
+
+    context('TestRakeBuilderTarget (compatibility with FileList)') {
+        setup {
+            @sut = TestableTarget.new { |t|
+                t.name = 'name'
+                t.sources = FileList['*']
+                t.includes = FileList['*']
+                t.files = FileList['*']
+                t.libs = FileList['*']
+            }
+        }
+
+        should('sources works with Rake::FileList') {
+            assert_equal(Array, @sut.peek(:_sources).class)
+        }
+
+        should('includes works with Rake::FileList') {
+            assert_equal(String, @sut.peek(:_includes).class)
+        }
+
+        should('files works with Rake::FileList') {
+            assert_equal(Array, @sut.peek(:_files).class)
+        }
+
+        should('libs works with Rake::FileList') {
+            assert_equal(String, @sut.peek(:_libs).class)
+        }
+    }
 end
 

@@ -148,7 +148,9 @@ class Target
 
 private
     def dispatch obj, prefix
-        if obj.kind_of? Array
+        if obj.kind_of? Rake::FileList
+            dispatch(obj.to_a, prefix)
+        elsif obj.kind_of? Array
             obj.collect { |item| dispatch(item, prefix) }.
                 reject { |x| x.nil? or x.empty? }.flatten
         else
@@ -175,8 +177,10 @@ private
     def _files_Generated(x) x.name; end
 
     def _sources
-        @sources.flatten
+        dispatch(@sources, 'sources')
     end
+
+    def _sourcesOther(obj) obj; end
 
     def _includes
         dispatch(@includes, 'includes').join(' ')
