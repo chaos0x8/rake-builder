@@ -79,6 +79,20 @@ module RakeBuilder
             tmp[0..tmp.size - 1 - File.extname(filename).size]
         end
     end
+
+    class Names
+        def self.[] *args
+            args.collect { |a|
+                if a.kind_of? GitSubmodule
+                    a.libs.collect { |l| "#{a.name}/#{l}" }
+                elsif a.kind_of? Target
+                    a.name
+                else
+                    a.to_s
+                end
+            }.flatten
+        end
+    end
 end
 
 class Pkg
