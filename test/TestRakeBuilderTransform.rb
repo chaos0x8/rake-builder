@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2015, <https://github.com/chaos0x8>
+# Copyright (c) 2016, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -18,8 +18,27 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-def web_require url
-    resultFile = "#{File.dirname(__FILE__)}/#{File.basename(url)}"
-    system "wget #{url}" unless File.exist? resultFile
-    require_relative resultFile
+require 'test/unit'
+require 'mocha/setup'
+require 'shoulda'
+
+require_relative '../lib/RakeBuilder'
+
+class TestRakeBuilderTransform < Test::Unit::TestCase
+    include RakeBuilder::Transform
+
+    should('change single element to obj') {
+        assert_equal('obj/path/filename.o', to_obj('path/filename.ext'))
+    }
+
+    should('change multiple elements to obj') {
+        input = ['path1/filename1.ext1', 'path2/filename2.ext2']
+        expected = ['obj/path1/filename1.o', 'obj/path2/filename2.o']
+
+        assert_equal(expected, to_obj(input))
+    }
+
+    should('change single element to mf') {
+        assert_equal('obj/path/filename.mf', to_mf('path/filename.ext'))
+    }
 end

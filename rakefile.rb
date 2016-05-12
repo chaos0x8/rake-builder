@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2015, <https://github.com/chaos0x8>
+# Copyright (c) 2015 - 2016, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -18,6 +18,17 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-def helloWorld
-    "Hello World!"
-end
+require 'rake/testtask'
+
+Rake::TestTask.new(:test) { |t|
+    t.pattern = "#{File.dirname(__FILE__)}/test/Test*.rb"
+}
+
+desc "#{File.basename(File.dirname(__FILE__))}"
+task(:default => :test)
+
+desc "builds gem file"
+task(:gem => 'rake-builder.gemspec') {
+    sh 'gem build rake-builder.gemspec'
+}
+
