@@ -323,7 +323,7 @@ class Generated < Target
 
         unique(@name) { |dir|
             desc @description if @description
-            file(@name => [dir] + _dependencies) {
+            file(@name => [dir] + _files + _dependencies) {
                 @code.call
             }
         }
