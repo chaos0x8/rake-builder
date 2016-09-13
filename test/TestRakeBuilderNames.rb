@@ -25,39 +25,47 @@ require 'shoulda'
 require_relative '../lib/RakeBuilder'
 
 class TestRakeBuilderNames < Test::Unit::TestCase
-    include RakeBuilder
+  include RakeBuilder
 
-    context('TestRakeBuilderNames') {
-        should('return list of strings') {
-            assert_equal(['1', 'filename'], Names[1, 'filename'])
-        }
-
-        should('not convert symbols to string') {
-            assert_equal(['string', :symbol], Names['string', :symbol])
-        }
-
-        should('extract names from nested arrays') {
-            assert_equal(['a', 'b', 'c', 'd'], Names['a', ['b', 'c'], ['d']])
-        }
-
-        context('with some target') {
-            setup {
-                @target = mock()
-                @target.expects(:kind_of?).returns(false).at_least(0)
-                @target.expects(:kind_of?).with(Target).returns(true).at_least(0)
-                @target.expects(:name).returns('target').at_least(0)
-            }
-
-            should('extract name from Target') {
-                assert_equal(['target'], Names[@target])
-            }
-
-            should('extract libs from GitSubmodule') {
-                @target.expects(:kind_of?).with(GitSubmodule).returns(true).at_least(0)
-                @target.expects(:libs).returns(['lib1', 'lib2']).at_least(0)
-
-                assert_equal(['target/lib1', 'target/lib2'], Names[@target])
-            }
-        }
+  context('TestRakeBuilderNames') {
+    should('return list of strings') {
+      assert_equal(['1', 'filename'], Names[1, 'filename'])
     }
+
+    should('not convert symbols to string') {
+      assert_equal(['string', :symbol], Names['string', :symbol])
+    }
+
+    should('extract names from nested arrays') {
+      assert_equal(['a', 'b', 'c', 'd'], Names['a', ['b', 'c'], ['d']])
+    }
+
+    context('with some target') {
+      setup {
+        @target = mock()
+        @target.expects(:kind_of?).returns(false).at_least(0)
+        @target.expects(:kind_of?).with(Target).returns(true).at_least(0)
+        @target.expects(:name).returns('target').at_least(0)
+      }
+
+      should('extract name from Target') {
+        assert_equal(['target'], Names[@target])
+      }
+
+      should('extract libs from GitSubmodule') {
+        @target.expects(:kind_of?).with(GitSubmodule).returns(true).at_least(0)
+        @target.expects(:libs).returns(['lib1', 'lib2']).at_least(0)
+
+        assert_equal(['target/lib1', 'target/lib2'], Names[@target])
+      }
+
+      should('include target targetDependencies when present') {
+        @target.expects(:kind_of?).with(Target).returns(true).at_least(0)
+        @target.expects(:name).returns('target').at_least(0)
+        @target.expects(:targetDependencies).returns(('a'..'c').to_a).at_least(0)
+
+        assert_equal(['target', 'a', 'b', 'c'], Names[@target])
+      }
+    }
+  }
 end

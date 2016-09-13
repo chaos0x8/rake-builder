@@ -258,78 +258,6 @@ private
     end
 end
 
-class Library < Target
-    def initialize &block
-        super
-
-        createRakeSourceTargets
-        createRakeLibraryTarget
-    end
-
-private
-    def createRakeLibraryTarget
-        unique(@name) { |dir|
-            desc @description if @description
-            file(@name => [dir] + _files + to_obj(_sources) + _dependencies) {
-                sh "ar vsr #{@name} #{to_obj(_sources).join(' ')}"
-            }
-        }
-    end
-end
-
-class SharedLibrary < Target
-    def initialize &block
-        super
-
-        createRakeSourceTargets(:extraFlags => [ '-fPIC' ])
-        createRakeSharedLibraryTarget
-    end
-
-private
-    def createRakeSharedLibraryTarget
-        unique(@name) { |dir|
-            desc @description if @description
-            file(@name => [dir] + _files + to_obj(_sources) + _dependencies) {
-                sh "g++ #{_flags} -shared #{to_obj(_sources).join(' ')} -o #{@name}".squeeze(' ')
-            }
-        }
-    end
-end
-
-class Executable < Target
-    def initialize &block
-        super
-
-        createRakeSourceTargets
-        createRakeExecutableTarget
-    end
-
-private
-    def createRakeExecutableTarget
-        unique(@name) { |dir|
-            desc @description if @description
-            file(@name => [dir] + _files + to_obj(_sources) + _dependencies) {
-                sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
-            }
-        }
-    end
-end
-
-class Generated < Target
-    attr_accessor :code
-
-    def initialize &block
-        super(:mandatory => [ :code ], &block)
-
-        unique(@name) { |dir|
-            desc @description if @description
-            file(@name => [dir] + _files + _dependencies) {
-                @code.call
-            }
-        }
-    end
-end
-
 class GitSubmodule < Target
     attr_accessor :name
 
@@ -367,5 +295,118 @@ class GitSubmodule < Target
         }
         result
     end
+end
+
+# -------------- V2
+
+module RakeBuilder
+  class Names
+    def self.[](*args)
+      args.collect { |a|
+          if a.kind_of? Array
+            Names[*a]
+          elsif a.kind_of? GitSubmodule
+            a.libs.collect { |l| "#{a.name}/#{l}" }
+          elsif a.kind_of? Target
+            tmp = Array.new
+            tmp << a.name
+            tmp << a.targetDependencies if a.respond_to? :targetDependencies
+            tmp
+          elsif a.kind_of? Symbol
+            a
+          else
+            a.to_s
+          end
+      }.flatten
+    end
+  end
+end
+
+class Library < Target
+  attr_reader :targetDependencies
+
+  def initialize &block
+    super
+
+    createRakeSourceTargets
+    createRakeLibraryTarget
+  end
+
+private
+  def createRakeLibraryTarget
+    unique(@name) { |dir|
+      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
+
+      desc @description if @description
+      file(@name => @targetDependencies) {
+        sh "ar vsr #{@name} #{to_obj(_sources).join(' ')}"
+      }
+    }
+  end
+end
+
+class SharedLibrary < Target
+  attr_reader :targetDependencies
+
+  def initialize &block
+    super
+
+    createRakeSourceTargets(:extraFlags => [ '-fPIC' ])
+    createRakeSharedLibraryTarget
+  end
+
+private
+  def createRakeSharedLibraryTarget
+    unique(@name) { |dir|
+      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
+
+      desc @description if @description
+      file(@name => @targetDependencies) {
+        sh "g++ #{_flags} -shared #{to_obj(_sources).join(' ')} -o #{@name}".squeeze(' ')
+      }
+    }
+  end
+end
+
+
+class Executable < Target
+  attr_reader :targetDependencies
+
+  def initialize(&block)
+    super(&block)
+
+    createRakeSourceTargets
+    createRakeExecutableTarget
+  end
+
+private
+  def createRakeExecutableTarget
+    unique(@name) { |dir|
+      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
+
+      desc @description if @description
+      file(@name => @targetDependencies) {
+        sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
+      }
+    }
+  end
+end
+
+class Generated < Target
+  attr_reader :targetDependencies
+  attr_accessor :code
+
+  def initialize &block
+    super(:mandatory => [ :code ], &block)
+
+    unique(@name) { |dir|
+      @targetDependencies = [ dir, _files, _dependencies ].flatten
+
+      desc @description if @description
+      file(@name => @targetDependencies) {
+        @code.call
+      }
+    }
+  end
 end
 
