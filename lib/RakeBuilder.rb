@@ -21,6 +21,55 @@
 require 'shellwords'
 require 'rake'
 
+# -------------- V2
+
+module RakeBuilder
+  module Utility
+    include Rake::DSL
+
+    def readMf(mf)
+      if File.exists?(mf)
+        File.open(mf, 'r') { |f|
+          dependencies = Shellwords.split(f.read.gsub("\\\n", '')).reject { |x|
+            x.match(/#{Regexp.quote('.o:')}$/)
+          }
+
+          if dependencies.any? { |fn| not File.exists?(fn) }
+            sh "rm #{Shellwords.escape(mf)}"
+            Array.new
+          else
+            dependencies
+          end
+        }
+      else
+        Array.new
+      end
+    end
+  end
+end
+
+module RakeBuilder
+  class Names
+    def self.[] *args
+      args.collect { |a|
+        if a.kind_of? Array
+          Names[*a]
+        elsif a.kind_of? GitSubmodule
+          a.libs.collect { |l| "#{a.name}/#{l}" }
+        elsif a.kind_of? Target
+          a.name
+        elsif a.kind_of? Symbol
+          a
+        else
+          a.to_s
+        end
+      }.flatten
+    end
+  end
+end
+
+# -------------- V1
+
 module RakeBuilder
     class MissingBlock < RuntimeError
         def initialize
@@ -41,60 +90,18 @@ module RakeBuilder
         end
 
         def to_mf name
-            'obj/' + change_ext(name, '.mf')
+            'obj/' + name.ext('.mf')
         end
 
     private
         def to_obj_String name
-            'obj/' + change_ext(name, '.o')
+            'obj/' + name.ext('.o')
         end
 
         def to_obj_Array name
             name.collect { |n|
                 to_obj_String(n)
             }
-        end
-
-        def change_ext name, ext
-            name.sub(/\.\w+$/, ext)
-        end
-    end
-
-    module Utility
-        def readDependencies depName
-            result = Array.new
-
-            File.open(depName, 'r') { |f|
-                content = Shellwords.split(f.read.gsub("\\\n", ''))
-                result = content.reject { |x|
-                    x.match(/#{Regexp.quote('.o:')}$/)
-                }
-            } if File.exists?(depName)
-
-            result
-        end
-
-        def onlyBasename filename
-            tmp = File.basename(filename)
-            tmp[0..tmp.size - 1 - File.extname(filename).size]
-        end
-    end
-
-    class Names
-        def self.[] *args
-            args.collect { |a|
-                if a.kind_of? Array
-                    Names[*a]
-                elsif a.kind_of? GitSubmodule
-                    a.libs.collect { |l| "#{a.name}/#{l}" }
-                elsif a.kind_of? Target
-                    a.name
-                elsif a.kind_of? Symbol
-                    a
-                else
-                    a.to_s
-                end
-            }.flatten
         end
     end
 end
@@ -233,15 +240,7 @@ private
         opts[:extraFlags] ||= Array.new
 
         _sources.each { |source|
-            dependencies = readDependencies(to_mf(source))
-
-            dependencies.each { |d|
-                unique(d) {
-                    file(d) {
-                        Rake::Task[to_mf(source)].execute
-                    }
-                } unless File.exists?(d)
-            }
+            dependencies = readMf(to_mf(source))
 
             unique(to_mf(source)) { |dir|
                 file(to_mf(source) => [dir, source] + dependencies) {

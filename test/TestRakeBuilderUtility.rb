@@ -24,45 +24,53 @@ require 'shoulda'
 
 require_relative '../lib/RakeBuilder'
 
+require 'securerandom'
+
 class TestRakeBuilderUtility < Test::Unit::TestCase
-    include RakeBuilder::Utility
+  include RakeBuilder::Utility
 
-    context('TestRakeBuilderUtility::readDependencies') {
-        setup {
-            @filename = 'filename'
+  context('TestRakeBuilderUtility::readMf') {
+    setup {
+      @filename = "/tmp/#{File.basename(__FILE__)}-#{SecureRandom.hex}.mf"
 
-            @content = 'UnitTestSuite.o: Test/Source/UnitTestSuite.cpp \\' + "\n" +
-                       ' Source/Game/Source/Unit.hpp Source/Interfaces/Source/IObject.hpp'
+      File.open(@filename, 'w') { |f|
+        f.write 'UnitTestSuite.o: Test/Source/UnitTestSuite.cpp \\' + "\n" +
+                ' Source/Game/Source/Unit.hpp Source/Interfaces/Source/IObject.hpp'
+      }
 
-            @file = Object.new
-            @file.expects(:read).returns(@content).at_least(0)
+      File.expects(:exists?).returns(false).at_least(0)
 
-            File.expects(:exists?).returns(false).at_least(0)
-            File.expects(:exists?).with(@filename).returns(true).at_least(0)
-            File.expects(:open).with(@filename, 'r').yields(@file).at_least(0)
-        }
-
-        should('return list of dependent files') {
-            expected = [ 'Test/Source/UnitTestSuite.cpp',
-                         'Source/Game/Source/Unit.hpp',
-                         'Source/Interfaces/Source/IObject.hpp' ]
-
-            assert_equal(expected, readDependencies(@filename))
-        }
-
-        should('return empty array when file doesn\'t exists') {
-            File.expects(:exists?).with(@filename).returns(false).at_least(0)
-
-            assert_equal([], readDependencies(@filename))
-        }
+      self.expects(:sh).at_most(0)
     }
 
-    context('TestRakeBuilderUtility::onlyBasename') {
-        [ 'path/filename.extension', 'filename', 'path/filename', 'filename.extension' ].each_with_index { |v, i|
-            should("return basename without extension/#{i}") {
-                assert_equal('filename', onlyBasename(v))
-            }
-        }
+    teardown {
+      FileUtils.rm(@filename)
     }
+
+    should('return list of dependent files') {
+      expected = [ 'Test/Source/UnitTestSuite.cpp',
+                   'Source/Game/Source/Unit.hpp',
+                   'Source/Interfaces/Source/IObject.hpp' ]
+
+      File.expects(:exists?).with { |x| expected.include?(x) }.returns(true).at_least(0)
+      File.expects(:exists?).with(@filename).returns(true).at_least(0)
+
+      assert_equal(expected, readMf(@filename))
+    }
+
+    should('delete .mf file when any of dependent files is missing') {
+      File.expects(:exists?).returns(true).at_least(0)
+      File.expects(:exists?).with('Source/Game/Source/Unit.hpp').returns(false).at_least(0)
+      self.expects(:sh).with("rm #{@filename}")
+
+      assert_equal([], readMf(@filename))
+    }
+
+    should('return empty array when file doesn\'t exists') {
+      File.expects(:exists?).with(@filename).returns(false).at_least(0)
+
+      assert_equal([], readMf(@filename))
+    }
+  }
 end
 
