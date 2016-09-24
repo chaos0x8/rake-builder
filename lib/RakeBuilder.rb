@@ -48,43 +48,42 @@ module RakeBuilder
   end
 end
 
-# -------------- V1
+module RakeBuilder
+  class MissingBlock < RuntimeError
+    def initialize
+      super('Missing block')
+    end
+  end
+
+  class MissingAttribute < RuntimeError
+    def initialize attribute
+      super("Missing attribute '#{attribute}'")
+    end
+  end
+end
 
 module RakeBuilder
-    class MissingBlock < RuntimeError
-        def initialize
-            super('Missing block')
-        end
+  module Transform
+    def to_obj name
+      chExt(name, '.o')
     end
 
-    class MissingAttribute < RuntimeError
-        def initialize attribute
-            super("Missing attribute '#{attribute}'")
-        end
+    def to_mf name
+      chExt(name, '.mf')
     end
 
-    module Transform
-        def to_obj name
-            method = 'to_obj_' + name.class.to_s
-            send(method.to_sym, name)
-        end
-
-        def to_mf name
-            'obj/' + name.ext('.mf')
-        end
-
-    private
-        def to_obj_String name
-            'obj/' + name.ext('.o')
-        end
-
-        def to_obj_Array name
-            name.collect { |n|
-                to_obj_String(n)
-            }
-        end
+  private
+    def chExt(x, ext)
+      if x.respond_to?(:collect)
+        x.collect { |y| chExt(y, ext) }
+      else
+        'obj/' + x.ext(ext)
+      end
     end
+  end
 end
+
+# -------------- V1
 
 class Pkg
     def initialize name
