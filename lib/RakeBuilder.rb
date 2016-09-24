@@ -48,26 +48,6 @@ module RakeBuilder
   end
 end
 
-module RakeBuilder
-  class Names
-    def self.[] *args
-      args.collect { |a|
-        if a.kind_of? Array
-          Names[*a]
-        elsif a.kind_of? GitSubmodule
-          a.libs.collect { |l| "#{a.name}/#{l}" }
-        elsif a.kind_of? Target
-          a.name
-        elsif a.kind_of? Symbol
-          a
-        else
-          a.to_s
-        end
-      }.flatten
-    end
-  end
-end
-
 # -------------- V1
 
 module RakeBuilder
@@ -302,20 +282,20 @@ module RakeBuilder
   class Names
     def self.[](*args)
       args.collect { |a|
-          if a.kind_of? Array
-            Names[*a]
-          elsif a.kind_of? GitSubmodule
-            a.libs.collect { |l| "#{a.name}/#{l}" }
-          elsif a.kind_of? Target
-            tmp = Array.new
-            tmp << a.name
-            tmp << a.targetDependencies if a.respond_to? :targetDependencies
-            tmp
-          elsif a.kind_of? Symbol
-            a
-          else
-            a.to_s
-          end
+        if a.kind_of? Array
+          Names[*a]
+        elsif a.kind_of? GitSubmodule
+          a.libs.collect { |l| "#{a.name}/#{l}" }
+        elsif a.kind_of? Target
+          tmp = Array.new
+          tmp << a.name
+          tmp << Names[*a.targetDependencies] if a.respond_to? :targetDependencies
+          tmp
+        elsif a.kind_of? Symbol
+          a
+        else
+          a.to_s
+        end
       }.flatten
     end
   end

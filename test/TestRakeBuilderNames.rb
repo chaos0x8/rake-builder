@@ -27,6 +27,14 @@ require_relative '../lib/RakeBuilder'
 class TestRakeBuilderNames < Test::Unit::TestCase
   include RakeBuilder
 
+  def target(name:)
+    t = mock()
+    t.expects(:kind_of?).returns(false).at_least(0)
+    t.expects(:kind_of?).with(Target).returns(true).at_least(0)
+    t.expects(:name).returns(name).at_least(0)
+    t
+  end
+
   context('TestRakeBuilderNames') {
     should('return list of strings') {
       assert_equal(['1', 'filename'], Names[1, 'filename'])
@@ -42,10 +50,7 @@ class TestRakeBuilderNames < Test::Unit::TestCase
 
     context('with some target') {
       setup {
-        @target = mock()
-        @target.expects(:kind_of?).returns(false).at_least(0)
-        @target.expects(:kind_of?).with(Target).returns(true).at_least(0)
-        @target.expects(:name).returns('target').at_least(0)
+        @target = target(name: 'target')
       }
 
       should('extract name from Target') {
@@ -65,6 +70,19 @@ class TestRakeBuilderNames < Test::Unit::TestCase
         @target.expects(:targetDependencies).returns(('a'..'c').to_a).at_least(0)
 
         assert_equal(['target', 'a', 'b', 'c'], Names[@target])
+      }
+
+      context('with second target') {
+        setup {
+          @target2 = target(name: 'target2')
+        }
+
+        should('work with nested targets') {
+          @target.expects(:targetDependencies).returns([ 'a', @target2, 'c' ]).at_least(0)
+          @target2.expects(:targetDependencies).returns([ 'x', 'y' ]).at_least(0)
+
+          assert_equal(['target', 'a', 'target2', 'x', 'y', 'c'], Names[@target])
+        }
       }
     }
   }
