@@ -77,7 +77,7 @@ module RakeBuilder
       if x.respond_to?(:collect)
         x.collect { |y| chExt(y, ext) }
       else
-        'obj/' + x.ext(ext)
+        '.obj/' + x.ext(ext)
       end
     end
   end
@@ -151,68 +151,46 @@ class Target
     end
 
 private
-    def dispatch obj, prefix
-        if obj.kind_of? Rake::FileList
-            dispatch(obj.to_a, prefix)
-        elsif obj.kind_of? Array
-            obj.collect { |item| dispatch(item, prefix) }.
-                reject { |x| x.nil? or x.empty? }.flatten
-        else
-            private_methods.grep(/_#{Regexp.quote(prefix)}_\w+/).each { |symbol|
-                clas = symbol.to_s.match(/_#{Regexp.quote(prefix)}_(\w+)/)[1]
-                if obj.kind_of? Object.const_get(clas)
-                    return send(symbol, obj)
-                end
-            }
-
-            begin
-                send("_#{prefix}Other".to_sym, obj)
-            rescue NoMethodError
-                nil
-            end
-        end
-    end
-
     def _files
-        dispatch(@files, 'files')
+      @files.flatten.collect { |x|
+        if x.kind_of?(Generated)
+          x.name
+        else
+          x
+        end
+      }
     end
-
-    def _filesOther(obj) obj; end
-    def _files_Generated(x) x.name; end
 
     def _sources
-        dispatch(@sources, 'sources')
+      @sources.flatten
     end
-
-    def _sourcesOther(obj) obj; end
 
     def _includes
-        dispatch(@includes, 'includes').join(' ')
+      @includes.flatten.collect { |x| "-I#{Shellwords.escape(x)}" }.join(' ')
     end
-
-    def _includesOther(obj) "-I#{Shellwords.escape(obj)}"; end
-    def _includes_Array(x) x.collect { |xx| _includesDispatch(xx) }.reject { |xx| xx.nil? or xx.empty? }.join(' '); end
 
     def _flags
-        (@flags + dispatch(@libs, 'flags')).join(' ')
+      pkgs = @libs.flatten.select { |x| x.kind_of?(Pkg) }
+      pkgFlags = pkgs.collect { |x| x.flags }
+      (@flags + pkgFlags).flatten.join(' ')
     end
-
-    def _flags_Pkg(x) x.flags.join(' '); end
 
     def _libs
-        dispatch(@libs, 'libs').join(' ')
+      @libs.flatten.collect { |x|
+        if x.kind_of?(Pkg) or x.kind_of?(GitSubmodule)
+          x.libs
+        elsif x.kind_of?(Target)
+          x.name
+        else
+          x
+        end
+      }.flatten.join(' ')
     end
-
-    def _libsOther(obj) obj; end
-    def _libs_Pkg(x) x.libs.join(' '); end
-    def _libs_GitSubmodule(x) x.libs.join(' '); end
-    def _libs_Target(x) x.name; end
 
     def _dependencies
-        dispatch(@libs, 'dependencies')
+      targets = @libs.flatten.select { |x| x.kind_of?(Target) }
+      targets.collect { |x| x.name }
     end
-
-    def _dependencies_Target(x) x.name; end
 
 private
     def createRakeSourceTargets opts = Hash.new

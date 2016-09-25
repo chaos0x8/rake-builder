@@ -69,32 +69,98 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
         end
     end
 
-    context('TestRakeBuilderTarget (compatibility with FileList)') {
-        setup {
-            @sut = TestableTarget.new { |t|
-                t.name = 'name'
-                t.sources = FileList['*']
-                t.includes = FileList['*']
-                t.files = FileList['*']
-                t.libs = FileList['*']
-            }
-        }
+  context('TestRakeBuilderTarget (dispatch process)') {
+    setup {
+      @generated = Generated.new { |t|
+        t.name = '|gen|'
+        t.code = Proc.new { }
+      }
 
-        should('sources works with Rake::FileList') {
-            assert_equal(Array, @sut.peek(:_sources).class)
-        }
+      @tar = Target.new { |t|
+        t.name = '|tar|'
+      }
 
-        should('includes works with Rake::FileList') {
-            assert_equal(String, @sut.peek(:_includes).class)
-        }
-
-        should('files works with Rake::FileList') {
-            assert_equal(Array, @sut.peek(:_files).class)
-        }
-
-        should('libs works with Rake::FileList') {
-            assert_equal(String, @sut.peek(:_libs).class)
-        }
+      @pkg = mock()
+      @pkg.expects(:kind_of?).returns(false).at_least(0)
+      @pkg.expects(:kind_of?).with(Pkg).returns(true).at_least(0)
+      @pkg.expects(:flags).returns(['f1', 'f2']).at_least(0)
+      @pkg.expects(:libs).returns(['l1', 'l2']).at_least(0)
     }
+
+    should('dispatch files') {
+      @sut = TestableTarget.new { |t|
+        t.name = 'sut'
+        t.files = [ 'a', @generated, FileList['x'], [ 'b', 'c' ]]
+      }
+
+      assert_equal(['a', '|gen|', 'x', 'b', 'c'], @sut.peek(:_files))
+    }
+
+    should('dispatch sources') {
+      @sut = TestableTarget.new { |t|
+        t.name = 'sut'
+        t.sources = [ 'a', FileList['x'], [ 'b', 'c' ]]
+      }
+
+      assert_equal(['a', 'x', 'b', 'c'], @sut.peek(:_sources))
+    }
+
+    should('dispatch includes') {
+      @sut = TestableTarget.new { |t|
+        t.name = 'sut'
+        t.includes = [ 'a', FileList['x'], [ 'b', 'c' ]]
+      }
+
+      assert_equal('-Ia -Ix -Ib -Ic', @sut.peek(:_includes))
+    }
+
+    should('dispatch flags and libs') {
+      @sut = TestableTarget.new { |t|
+        t.name = 'sut'
+        t.flags = [ 'a', [ 'b' ]]
+        t.libs = [ 'x', @pkg, [ 'y', 'z']]
+      }
+
+      assert_equal('a b f1 f2', @sut.peek(:_flags))
+      assert_equal('x l1 l2 y z', @sut.peek(:_libs))
+    }
+
+    should('dispatch dependencies') {
+      @sut = TestableTarget.new { |t|
+        t.name = 'sut'
+        t.libs = [ 'x', @tar, @gen, @pkg, [ 'y', 'z']]
+      }
+
+      assert_equal(['|tar|'], @sut.peek(:_dependencies))
+    }
+  }
+
+  context('TestRakeBuilderTarget (compatibility with FileList)') {
+    setup {
+      @sut = TestableTarget.new { |t|
+        t.name = 'name'
+        t.sources = FileList['*']
+        t.includes = FileList['*']
+        t.files = FileList['*']
+        t.libs = FileList['*']
+      }
+    }
+
+    should('sources works with Rake::FileList') {
+      assert_equal(FileList, @sut.peek(:_sources).class)
+    }
+
+    should('includes works with Rake::FileList') {
+      assert_equal(String, @sut.peek(:_includes).class)
+    }
+
+    should('files works with Rake::FileList') {
+      assert_equal(FileList, @sut.peek(:_files).class)
+    }
+
+    should('libs works with Rake::FileList') {
+      assert_equal(String, @sut.peek(:_libs).class)
+    }
+  }
 end
 

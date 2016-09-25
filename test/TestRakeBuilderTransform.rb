@@ -28,17 +28,17 @@ class TestRakeBuilderTransform < Test::Unit::TestCase
     include RakeBuilder::Transform
 
     should('change single element to obj') {
-        assert_equal('obj/path/filename.o', to_obj('path/filename.ext'))
+        assert_equal('.obj/path/filename.o', to_obj('path/filename.ext'))
     }
 
     should('change multiple elements to obj') {
         input = ['path1/filename1.ext1', 'path2/filename2.ext2']
-        expected = ['obj/path1/filename1.o', 'obj/path2/filename2.o']
+        expected = ['.obj/path1/filename1.o', '.obj/path2/filename2.o']
 
         assert_equal(expected, to_obj(input))
     }
 
     should('change single element to mf') {
-        assert_equal('obj/path/filename.mf', to_mf('path/filename.ext'))
+        assert_equal('.obj/path/filename.mf', to_mf('path/filename.ext'))
     }
 end
