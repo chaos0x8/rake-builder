@@ -6,13 +6,13 @@ libs = Array.new
 
 libs << Library.new { |t|
     t.name = 'bin/libmain.a'
-    t.sources = Dir['Source/*.cpp'] - [ 'main.cpp' ]
+    t.sources = Dir['Source/*.cpp'] - [ 'Source/main.cpp' ]
     t.includes = [ 'Source' ]
     t.flags = [ '--std=c++0x' ]
     t.description = 'Build testable library'
 }
 
-Executable.new { |t|
+main = Executable.new { |t|
     t.name = 'bin/main'
     t.sources = [ 'Source/main.cpp' ]
     t.includes = [ 'Source' ]
@@ -21,5 +21,5 @@ Executable.new { |t|
     t.description = 'Build testable application'
 }
 
-task(:default => 'bin/main')
+multitask(default: RakeBuilder::Names[main])
 
