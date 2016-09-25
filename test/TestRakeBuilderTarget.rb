@@ -25,39 +25,64 @@ require 'shoulda'
 require_relative '../lib/RakeBuilder'
 
 class TestRakeBuilderTarget < Test::Unit::TestCase
-    context('TestRakeBuilderTarget') {
-        setup {
-            @sut = Target.new { |t|
-                t.name = 'dummy'
-            }
+  context('TestRakeBuilderTarget') {
+    setup {
+      @sut = Target.new { |t|
+        t.name = 'dummy'
+      }
 
-            @counter = 0
-        }
+      @sut.expects(:directory).at_most(0)
 
-        should('add unique tasks') {
-            @sut.unique('task1') { @counter += 1}
-            @sut.unique('task2') { @counter += 1}
-
-            assert_equal(2, @counter)
-        }
-
-        should('add skip duplicated tasks') {
-            @sut.unique('task3') { @counter += 1}
-            @sut.unique('task3') { @counter += 1}
-
-            assert_equal(1, @counter)
-        }
-
-        should('yield dirname') {
-            dirname = nil
-
-            @sut.unique('dir/file') { |dir|
-                dirname = dir
-            }
-
-            assert_equal('dir', dirname)
-        }
+      @counter = 0
     }
+
+    should('add unique tasks') {
+      @sut.unique('task1') { @counter += 1}
+      @sut.unique('task2') { @counter += 1}
+
+      assert_equal(2, @counter)
+    }
+
+    should('skip duplicated tasks') {
+      @sut.unique('task3') { @counter += 1}
+      @sut.unique('task3') { @counter += 1}
+
+      assert_equal(1, @counter)
+    }
+
+    should('skip duplicated tasks when added without block') {
+      @sut.unique('task4')
+      @sut.unique('task4') { @counter += 1}
+
+      assert_equal(0, @counter)
+    }
+
+    should('yield dirname') {
+      dirname = nil
+
+      @sut.expects(:directory).with('dir')
+      @sut.unique('dir/file') { |dir|
+        dirname = dir
+      }
+
+      assert_equal('dir', dirname)
+    }
+
+    should('add only unique directory tasks') {
+      @sut.expects(:directory).with('dir1')
+      @sut.expects(:directory).with('dir2')
+
+      @sut.unique('dir1/file1') { |dir| }
+      @sut.unique('dir1/file2') { |dir| }
+      @sut.unique('dir2/file1') { |dir| }
+    }
+
+    should('raise when unknown arity detected') {
+      assert_raise(RuntimeError) {
+        @sut.unique('') { |a, b| }
+      }
+    }
+  }
 
     class TestableTarget < Target
         def initialize &block

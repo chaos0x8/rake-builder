@@ -112,7 +112,7 @@ class Target
 
     @@definedTasks = Array.new
 
-    def initialize opts = Hash.new, &block
+    def initialize(mandatory: [], &block)
         @files = Array.new
         @sources = Array.new
         @flags = Array.new
@@ -123,31 +123,30 @@ class Target
 
         block.call self
 
-        [ :name, *(opts[:mandatory] || []) ].each { |mandatory|
-            raise RakeBuilder::MissingAttribute.new(mandatory.to_s) unless send(mandatory)
+        [ :name, *mandatory ].each { |mandatory|
+          raise RakeBuilder::MissingAttribute.new(mandatory.to_s) unless send(mandatory)
         }
     end
 
     def unique taskName, &block
-        unless @@definedTasks.include?(taskName)
-            @@definedTasks.push(taskName)
+      unless @@definedTasks.include?(taskName)
+        @@definedTasks.push(taskName)
 
-            if block
-                case block.arity
-                when 0
-                    block.call
-                when 1
-                    dir = File.dirname(taskName)
-                    unless @@definedTasks.include?(dir)
-                        @@definedTasks.push(dir)
-                        directory(dir)
-                    end
-                    block.call(dir)
-                else
-                    raise 'Invalid block passed! Too many arguments!'
-                end
-            end
+        if block
+          case block.arity
+          when 0
+            block.call
+          when 1
+            dir = File.dirname(taskName)
+            unique(dir) {
+              directory(dir)
+            }
+            block.call(dir)
+          else
+            raise 'Invalid block passed! Too many arguments!'
+          end
         end
+      end
     end
 
 private
@@ -193,63 +192,22 @@ private
     end
 
 private
-    def createRakeSourceTargets opts = Hash.new
-        opts[:extraFlags] ||= Array.new
+    def createRakeSourceTargets(extraFlags: [])
+      _sources.each { |source|
+        dependencies = readMf(to_mf(source))
 
-        _sources.each { |source|
-            dependencies = readMf(to_mf(source))
-
-            unique(to_mf(source)) { |dir|
-                file(to_mf(source) => [dir, source] + dependencies) {
-                    sh "g++ #{_flags} #{opts[:extraFlags].join(' ')} #{_includes} -c #{source} -M -MM -MF #{to_mf(source)}".squeeze(' ')
-                }
-            }
-
-            unique(to_obj(source)) { |dir|
-                file(to_obj(source) => [dir, to_mf(source)]) {
-                    sh "g++ #{_flags} #{opts[:extraFlags].join(' ')} #{_includes} -c #{source} -o #{to_obj(source)}".squeeze(' ')
-                }
-            }
+        unique(to_mf(source)) { |dir|
+          file(to_mf(source) => [dir, source] + dependencies) {
+            sh "g++ #{_flags} #{extraFlags.join(' ')} #{_includes} -c #{source} -M -MM -MF #{to_mf(source)}".squeeze(' ')
+          }
         }
-    end
-end
 
-class GitSubmodule < Target
-    attr_accessor :name
-
-    def initialize &block
-        super(:mandatory => [:libs], &block)
-
-        unless File.exists? "#{@name}/.git"
-            sh 'git submodule init'
-            sh 'git submodule update'
-        end
-
-        Dir.chdir(@name) {
-            begin
-                pid = Process.spawn('rake', *@libs)
-                Process.wait(pid)
-            rescue Interrupt
-                Process.kill('TERM', pid)
-                Process.wait(pid)
-                raise
-            end
+        unique(to_obj(source)) { |dir|
+          file(to_obj(source) => [dir, to_mf(source)]) {
+            sh "g++ #{_flags} #{extraFlags.join(' ')} #{_includes} -c #{source} -o #{to_obj(source)}".squeeze(' ')
+          }
         }
-    end
-
-    def libs
-        @libs.collect { |x| "#{@name}/#{x}" }
-    end
-
-    def self.[] args = Hash.new
-        result = Array.new
-        args.each { |subModule, libs|
-            result << GitSubmodule.new { |mod|
-                mod.name = subModule
-                mod.libs = libs
-            }
-        }
-        result
+      }
     end
 end
 
@@ -264,10 +222,10 @@ module RakeBuilder
         elsif a.kind_of? GitSubmodule
           a.libs.collect { |l| "#{a.name}/#{l}" }
         elsif a.kind_of? Target
-          tmp = Array.new
-          tmp << a.name
-          tmp << Names[*a.targetDependencies] if a.respond_to? :targetDependencies
-          tmp
+          Enumerator.new { |e|
+            e << a.name
+            e << Names[*a.targetDependencies] if a.respond_to? :targetDependencies
+          }.to_a
         elsif a.kind_of? Symbol
           a
         else
@@ -361,6 +319,36 @@ class Generated < Target
       desc @description if @description
       file(@name => @targetDependencies) {
         @code.call
+      }
+    }
+  end
+end
+
+class GitSubmodule < Target
+  attr_accessor :name
+
+  def initialize &block
+    super(mandatory: [:libs], &block)
+
+    unless File.exists? "#{@name}/.git"
+      sh 'git submodule init'
+      sh 'git submodule update'
+    end
+
+    Dir.chdir(@name) {
+      sh "rake #{Shellwords.join(@libs)}"
+    }
+  end
+
+  def libs
+    @libs.collect { |x| "#{@name}/#{x}" }
+  end
+
+  def self.[] args = Hash.new
+    args.collect { |subModule, libs|
+      GitSubmodule.new { |mod|
+        mod.name = subModule
+        mod.libs = libs
       }
     }
   end
