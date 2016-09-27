@@ -61,7 +61,7 @@ class TestRakeBuilderNames < Test::Unit::TestCase
         @target.expects(:kind_of?).with(GitSubmodule).returns(true).at_least(0)
         @target.expects(:libs).returns(['lib1', 'lib2']).at_least(0)
 
-        assert_equal(['target/lib1', 'target/lib2'], Names[@target])
+        assert_equal(['lib1', 'lib2'], Names[@target])
       }
 
       should('include target targetDependencies when present') {

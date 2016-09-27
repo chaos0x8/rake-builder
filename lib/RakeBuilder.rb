@@ -213,7 +213,7 @@ module RakeBuilder
         if a.kind_of? Array
           Names[*a]
         elsif a.kind_of? GitSubmodule
-          a.libs.collect { |l| "#{a.name}/#{l}" }
+          a.libs
         elsif a.kind_of? Target
           Enumerator.new { |e|
             e << a.name

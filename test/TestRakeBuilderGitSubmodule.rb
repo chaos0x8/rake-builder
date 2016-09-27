@@ -53,6 +53,8 @@ class TestRakeBuilderGitSubmodule < Test::Unit::TestCase
         Dir.expects(:chdir).with('name').yields.in_sequence(@seq)
         t.expects(:sh).with('rake lib1 lib2').in_sequence(@seq)
       }
+
+      assert_equal(['name/lib1', 'name/lib2'], @sut.libs)
     }
 
     should('rake libraries in existing submodule') {
@@ -66,6 +68,8 @@ class TestRakeBuilderGitSubmodule < Test::Unit::TestCase
         Dir.expects(:chdir).with('name').yields.in_sequence(@seq)
         t.expects(:sh).with('rake lib1 lib2').in_sequence(@seq)
       }
+
+      assert_equal(['name/lib1', 'name/lib2'], @sut.libs)
     }
   }
 
