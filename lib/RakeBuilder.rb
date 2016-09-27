@@ -130,11 +130,12 @@ class Target
           when 0
             block.call
           when 1
-            dir = File.dirname(taskName)
-            unique(dir) {
-              directory(dir)
+            dirs = [ File.dirname(taskName) ].reject { |x| x== '.' }.each { | dir|
+              unique(dir) {
+                directory(dir)
+              }
             }
-            block.call(dir)
+            block.call(dirs)
           else
             raise 'Invalid block passed! Too many arguments!'
           end
@@ -180,8 +181,7 @@ private
     end
 
     def _dependencies
-      targets = @libs.flatten.select { |x| x.kind_of?(Target) }
-      targets.collect { |x| x.name }
+      RakeBuilder::Names[@libs.flatten.select { |x| x.kind_of?(Target) }]
     end
 
 private

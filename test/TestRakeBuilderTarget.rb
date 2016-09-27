@@ -66,6 +66,7 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
 
         @sut.expects(:directory).at_most(0)
 
+        @dirname = nil
         @counter = 0
       }
 
@@ -90,15 +91,21 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
         assert_equal(0, @counter)
       }
 
-      should('yield dirname') {
-        dirname = nil
-
-        @sut.expects(:directory).with('dir')
-        @sut.unique('dir/file') { |dir|
-          dirname = dir
+      should('yield empty array for files with no dirname') {
+        @sut.unique('file') { |dir|
+          @dirname = dir
         }
 
-        assert_equal('dir', dirname)
+        assert_equal([], @dirname)
+      }
+
+      should('yield dirname') {
+        @sut.expects(:directory).with('dir')
+        @sut.unique('dir/file') { |dir|
+          @dirname = dir
+        }
+
+        assert_equal(['dir'], @dirname)
       }
 
       should('add only unique directory tasks') {

@@ -85,5 +85,24 @@ class TestRakeBuilderNames < Test::Unit::TestCase
         }
       }
     }
+
+    context('with real nested targets') {
+      setup {
+        require 'securerandom'
+        @prefix = SecureRandom.hex
+
+        @target = Executable.new(name: "#{@prefix}_name1") { |t1|
+          t1.libs = [
+            Library.new(name: "#{@prefix}_name2", sources: [ 'a.cpp' ]),
+            Library.new(name: "#{@prefix}_name3", sources: [ 'b.cpp' ]) ]
+        }
+      }
+
+      should('return nested dependencies') {
+        result = Names[@target]
+
+        assert_equal(["#{@prefix}_name1", "#{@prefix}_name2", '.obj/a.o', "#{@prefix}_name3", '.obj/b.o'], Names[@target])
+      }
+    }
   }
 end
