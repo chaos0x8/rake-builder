@@ -190,13 +190,13 @@ private
         dependencies = readMf(to_mf(source))
 
         unique(to_mf(source)) { |dir|
-          file(to_mf(source) => [dir, source] + dependencies) {
+          file(to_mf(source) => [dir, source, dependencies].flatten) {
             sh "g++ #{_flags} #{extraFlags.join(' ')} #{_includes} -c #{source} -M -MM -MF #{to_mf(source)}".squeeze(' ')
           }
         }
 
         unique(to_obj(source)) { |dir|
-          file(to_obj(source) => [dir, to_mf(source)]) {
+          file(to_obj(source) => [dir, to_mf(source)].flatten) {
             sh "g++ #{_flags} #{extraFlags.join(' ')} #{_includes} -c #{source} -o #{to_obj(source)}".squeeze(' ')
           }
         }
