@@ -49,12 +49,6 @@ module RakeBuilder
 end
 
 module RakeBuilder
-  class MissingBlock < RuntimeError
-    def initialize
-      super('Missing block')
-    end
-  end
-
   class MissingAttribute < RuntimeError
     def initialize attribute
       super("Missing attribute '#{attribute}'")
@@ -112,19 +106,18 @@ class Target
 
     @@definedTasks = Array.new
 
-    def initialize(mandatory: [], &block)
-        @files = Array.new
-        @sources = Array.new
-        @flags = Array.new
-        @includes = Array.new
-        @libs = Array.new
+    def initialize(name: nil, files: [], sources: [], flags: [], includes: [], libs: [], mandatory: [], &block)
+        @name = name
+        @files = files
+        @sources = sources
+        @flags = flags
+        @includes = includes
+        @libs = libs
 
-        raise RakeBuilder::MissingBlock.new unless block
+        block.call(self) if block
 
-        block.call self
-
-        [ :name, *mandatory ].each { |mandatory|
-          raise RakeBuilder::MissingAttribute.new(mandatory.to_s) unless send(mandatory)
+        [ :name, *mandatory ].collect { |sym| [ sym, send(sym) ] }.each { |sym, value|
+          raise RakeBuilder::MissingAttribute.new(sym.to_s) if value.nil? or (value.kind_of?(Array) and value.empty?)
         }
     end
 
@@ -239,7 +232,7 @@ end
 class Library < Target
   attr_reader :targetDependencies
 
-  def initialize &block
+  def initialize(**opts, &block)
     super
 
     createRakeSourceTargets
@@ -262,7 +255,7 @@ end
 class SharedLibrary < Target
   attr_reader :targetDependencies
 
-  def initialize &block
+  def initialize(**opts, &block)
     super
 
     createRakeSourceTargets(:extraFlags => [ '-fPIC' ])
@@ -286,8 +279,8 @@ end
 class Executable < Target
   attr_reader :targetDependencies
 
-  def initialize(&block)
-    super(&block)
+  def initialize(**opts, &block)
+    super
 
     createRakeSourceTargets
     createRakeExecutableTarget
@@ -310,8 +303,10 @@ class Generated < Target
   attr_reader :targetDependencies
   attr_accessor :code
 
-  def initialize &block
-    super(:mandatory => [ :code ], &block)
+  def initialize(code: nil, **opts, &block)
+    @code = code
+
+    super(:mandatory => [:code], **opts, &block)
 
     unique(@name) { |dir|
       @targetDependencies = [ dir, _files, _dependencies ].flatten
@@ -327,8 +322,8 @@ end
 class GitSubmodule < Target
   attr_accessor :name
 
-  def initialize &block
-    super(mandatory: [:libs], &block)
+  def initialize(**opts, &block)
+    super(mandatory: [:libs], **opts, &block)
 
     unless File.exists? "#{@name}/.git"
       sh 'git submodule init'

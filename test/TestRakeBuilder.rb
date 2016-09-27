@@ -24,6 +24,8 @@ require 'shoulda'
 
 require_relative '../lib/RakeBuilder'
 
+require_relative 'TestableTarget'
+
 class TestRakeBuilder < Test::Unit::TestCase
     context('TestRakeBuilder') {
         [ Generated, Executable, Library, SharedLibrary ].each { |clas|
@@ -40,12 +42,6 @@ class TestRakeBuilder < Test::Unit::TestCase
                     assert_equal(@sut, result)
                 } unless clas == Generated
 
-                should('raise when no block passed') {
-                    assert_raise(RakeBuilder::MissingBlock) {
-                        @sut = clas.new
-                    }
-                }
-
                 should('raise when name not set in yielded block') {
                     assert_raise(RakeBuilder::MissingAttribute) {
                         @sut = clas.new { }
@@ -55,37 +51,26 @@ class TestRakeBuilder < Test::Unit::TestCase
         }
     }
 
-    context('TestRakeBuilder with nested pkgs') {
-        setup {
-            @pkgs = Pkg['sfml-all', 'glew']
-            @pkgs[0].expects(:flags).returns([]).at_least(0)
-            @pkgs[0].expects(:libs).returns(['-lsfml-system']).at_least(0)
-            @pkgs[1].expects(:flags).returns(['-I/usr/include/glew']).at_least(0)
-            @pkgs[1].expects(:libs).returns(['-lglew']).at_least(0)
+  context('TestRakeBuilder with nested pkgs') {
+    setup {
+      @pkgs = Pkg['sfml-all', 'glew']
+      @pkgs[0].expects(:flags).returns([]).at_least(0)
+      @pkgs[0].expects(:libs).returns(['-lsfml-system']).at_least(0)
+      @pkgs[1].expects(:flags).returns(['-I/usr/include/glew']).at_least(0)
+      @pkgs[1].expects(:libs).returns(['-lglew']).at_least(0)
 
-            @sut = Target.new { |t|
-                t.name = 'dummy'
-                t.flags = [ '--std=c++14' ]
-                t.libs = [ '-ldl', @pkgs ]
-            }
-
-            class << @sut
-                def flags
-                    _flags
-                end
-
-                def libs
-                    _libs
-                end
-            end
-        }
-
-        should('return flags') {
-            assert_equal('--std=c++14 -I/usr/include/glew', @sut.flags)
-        }
-
-        should('return libs') {
-            assert_equal('-ldl -lsfml-system -lglew', @sut.libs)
-        }
+      @sut = TestableTarget.new(name: 'dummy') { |t|
+        t.flags = [ '--std=c++14' ]
+        t.libs = [ '-ldl', @pkgs ]
+      }
     }
+
+    should('return flags') {
+      assert_equal('--std=c++14 -I/usr/include/glew', @sut.peek(:_flags))
+    }
+
+    should('return libs') {
+      assert_equal('-ldl -lsfml-system -lglew', @sut.peek(:_libs))
+    }
+  }
 end

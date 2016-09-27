@@ -27,7 +27,17 @@ require_relative '../lib/RakeBuilder'
 class TestRakeBuilderGitSubmodule < Test::Unit::TestCase
   context('TestRakeBuilderGitSubmodule') {
     setup {
+      Dir.expects(:chdir).at_least(0)
+
       @seq = sequence('seq')
+    }
+
+    should('raise when assigned libs list is empty') {
+      assert_raise(RakeBuilder::MissingAttribute) {
+        @sut = GitSubmodule.new(name: 'name', libs: []) { |t|
+          t.expects(:sh).at_least(0)
+        }
+      }
     }
 
     should('rake libraries in non-existing submodule') {
