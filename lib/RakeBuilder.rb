@@ -184,7 +184,6 @@ private
       RakeBuilder::Names[@libs.flatten.select { |x| x.kind_of?(Target) }]
     end
 
-private
     def createRakeSourceTargets(extraFlags: [])
       _sources.each { |source|
         dependencies = readMf(to_mf(source))
@@ -229,6 +228,19 @@ module RakeBuilder
   end
 end
 
+class Target
+  def createRakeTarget
+    unique(@name) { |dir|
+      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
+
+      desc @description if @description
+      file(@name => @targetDependencies) {
+        yield
+      }
+    }
+  end
+end
+
 class Library < Target
   attr_reader :targetDependencies
 
@@ -236,18 +248,8 @@ class Library < Target
     super
 
     createRakeSourceTargets
-    createRakeLibraryTarget
-  end
-
-private
-  def createRakeLibraryTarget
-    unique(@name) { |dir|
-      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
-
-      desc @description if @description
-      file(@name => @targetDependencies) {
-        sh "ar vsr #{@name} #{to_obj(_sources).join(' ')}"
-      }
+    createRakeTarget {
+      sh "ar vsr #{@name} #{to_obj(_sources).join(' ')}"
     }
   end
 end
@@ -259,22 +261,11 @@ class SharedLibrary < Target
     super
 
     createRakeSourceTargets(:extraFlags => [ '-fPIC' ])
-    createRakeSharedLibraryTarget
-  end
-
-private
-  def createRakeSharedLibraryTarget
-    unique(@name) { |dir|
-      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
-
-      desc @description if @description
-      file(@name => @targetDependencies) {
-        sh "g++ #{_flags} -shared #{to_obj(_sources).join(' ')} -o #{@name}".squeeze(' ')
-      }
+    createRakeTarget {
+      sh "g++ #{_flags} -shared #{to_obj(_sources).join(' ')} -o #{@name}".squeeze(' ')
     }
   end
 end
-
 
 class Executable < Target
   attr_reader :targetDependencies
@@ -283,18 +274,8 @@ class Executable < Target
     super
 
     createRakeSourceTargets
-    createRakeExecutableTarget
-  end
-
-private
-  def createRakeExecutableTarget
-    unique(@name) { |dir|
-      @targetDependencies = [ dir, _files, to_obj(_sources), _dependencies ].flatten
-
-      desc @description if @description
-      file(@name => @targetDependencies) {
-        sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
-      }
+    createRakeTarget {
+      sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
     }
   end
 end
