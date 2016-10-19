@@ -66,7 +66,6 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
 
         @sut.expects(:directory).at_most(0)
 
-        @dirname = nil
         @counter = 0
       }
 
@@ -77,35 +76,28 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
         assert_equal(2, @counter)
       }
 
-      should('skip duplicated tasks') {
+      should('raise when duplicated task is added') {
         @sut.unique('task3') { @counter += 1}
-        @sut.unique('task3') { @counter += 1}
+
+        assert_raise(RuntimeError) {
+          @sut.unique('task3') { @counter += 1}
+        }
 
         assert_equal(1, @counter)
       }
 
-      should('skip duplicated tasks when added without block') {
-        @sut.unique('task4')
-        @sut.unique('task4') { @counter += 1}
-
-        assert_equal(0, @counter)
-      }
-
       should('yield empty array for files with no dirname') {
         @sut.unique('file') { |dir|
-          @dirname = dir
+          assert_equal([], dir)
         }
-
-        assert_equal([], @dirname)
       }
 
       should('yield dirname') {
         @sut.expects(:directory).with('dir')
-        @sut.unique('dir/file') { |dir|
-          @dirname = dir
-        }
 
-        assert_equal(['dir'], @dirname)
+        @sut.unique('dir/file') { |dir|
+          assert_equal(['dir'], dir)
+        }
       }
 
       should('add only unique directory tasks') {
@@ -117,9 +109,9 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
         @sut.unique('dir2/file1') { |dir| }
       }
 
-      should('raise when unknown arity detected') {
-        assert_raise(RuntimeError) {
-          @sut.unique('') { |a, b| }
+      should('raise when block not passed') {
+        assert_raise(SyntaxError) {
+          @sut.unique('')
         }
       }
     }
@@ -130,10 +122,14 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
       @generated = Generated.new { |t|
         t.name = '|gen|'
         t.code = Proc.new { }
+
+        t.expects(:unique).with(t.name).at_most(1)
       }
 
       @tar = Target.new { |t|
         t.name = '|tar|'
+
+        t.expects(:unique).with(t.name).at_most(1)
       }
 
       @pkg = mock()

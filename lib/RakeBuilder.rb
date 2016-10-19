@@ -121,26 +121,18 @@ class Target
         }
     end
 
-    def unique taskName, &block
-      unless @@definedTasks.include?(taskName)
-        @@definedTasks.push(taskName)
+    def unique taskName
+      raise SyntaxError.new('Needs block!') unless block_given?
+      raise RuntimeError.new("Task #{taskName} is already defined!") if @@definedTasks.include?(taskName)
 
-        if block
-          case block.arity
-          when 0
-            block.call
-          when 1
-            dirs = [ File.dirname(taskName) ].reject { |x| x== '.' }.each { | dir|
-              unique(dir) {
-                directory(dir)
-              }
-            }
-            block.call(dirs)
-          else
-            raise 'Invalid block passed! Too many arguments!'
-          end
-        end
-      end
+      @@definedTasks.push(taskName)
+
+      dirs = [ File.dirname(taskName) ].reject { |x| x== '.' }.each { | dir|
+        unique(dir) {
+          directory(dir)
+        } unless @@definedTasks.include?(dir)
+      }
+      yield(dirs)
     end
 
 private
