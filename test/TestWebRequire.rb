@@ -25,74 +25,43 @@ require 'shoulda'
 require_relative '../lib/WebRequire'
 
 class TestWebRequire < Test::Unit::TestCase
-    include RakeBuilder
-
-    def expect_spawn_process
-        @pid = 42
-
-        Process.expects(:spawn).with('wget', @url).returns(@pid).in_sequence(@seq).then(@st.is('spawned'))
-        Process.expects(:wait).with(@pid).in_sequence(@seq)
-    end
-
-    def expect_kill_spawned_process
-        expect_spawn_process.raises(Interrupt.new)
-        Process.expects(:kill).with('TERM', @pid).in_sequence(@seq)
-        Process.expects(:wait).with(@pid).in_sequence(@seq)
-    end
-
-    context('TestWebRequire') {
-        setup {
-            Process.expects(:spawn).at_most(0)
-            Process.expects(:wait).at_most(0)
-            Process.expects(:kill).at_most(0)
-            FileUtils.expects(:rm).at_most(0)
-            self.expects(:require_relative).at_most(0)
-        }
-
-        setup {
-            @seq = sequence('sequence')
-            @st = states('process').starts_as('none')
-        }
-
-        setup {
-            @url = 'http://some-long/nested/url/to/filename.rb'
-            @file = 'filename.rb'
-        }
-
-        should('not download whet file exists') {
-            File.expects(:exists?).with(@file).returns(true).at_least(0)
-            self.expects(:require_relative).with(@file)
-
-            web_require @url
-        }
-
-        should('download befor require') {
-            expect_spawn_process
-
-            self.expects(:require_relative).with(@file).in_sequence(@seq)
-
-            web_require @url
-        }
-
-        should('interrupt download') {
-            expect_kill_spawned_process
-
-            assert_raise(Interrupt) {
-                web_require @url
-            }
-        }
-
-        should('clean after interrupted download') {
-            expect_kill_spawned_process
-
-            File.expects(:exists?).with(@file).when(@st.is('none')).returns(false).at_least(0)
-            File.expects(:exists?).with(@file).when(@st.is('spawned')).returns(true).at_least(0)
-
-            FileUtils.expects(:rm).with(@file)
-
-            assert_raise(Interrupt) {
-                web_require @url
-            }
-        }
+  context('TestWebRequire') {
+    setup {
+      @url = 'https://raw.githubusercontent.com/chaos0x8/rake-builder/master/lib/FileName.rb'
+      @path = File.expand_path('../lib', File.dirname(__FILE__))
     }
+
+    context('.web_require') {
+      setup {
+        File.expects(:exists?).returns(false).at_least(0)
+        self.expects(:system).at_most(0)
+      }
+
+      should('download file it doesn\'t exists') {
+        self.expects(:system).with('wget', @url)
+        self.expects(:require).with("#{@path}/FileName.rb")
+
+        web_require(@url)
+      }
+
+      should('not download when file already exists') {
+        File.expects(:exists?).with("#{@path}/FileName.rb").returns(true).at_least(0)
+        self.expects(:require).with("#{@path}/FileName.rb")
+
+        web_require(@url)
+      }
+    }
+
+    context('.web_eval') {
+      setup {
+        require 'open3'
+      }
+
+      should('source file from web') {
+        Open3.expects(:capture2).returns(['code', 'capture_status']).at_least(0)
+        self.expects(:eval).with('code')
+        web_eval('https://raw.githubusercontent.com/chaos0x8/rake-builder/master/lib/RakeBuilder.rb')
+      }
+    }
+  }
 end

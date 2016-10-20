@@ -18,24 +18,14 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-module RakeBuilder
-    def web_require url
-        resultFile = File.basename(url)
+def web_require url
+  resultFile = "#{File.dirname(__FILE__)}/#{File.basename(url)}"
+  system 'wget', url unless File.exists?(resultFile)
+  require resultFile
+end
 
-        unless File.exists? resultFile
-            begin
-                pid = Process.spawn('wget', url)
-                Process.wait(pid)
-            rescue Interrupt
-                Process.kill('TERM', pid)
-                Process.wait(pid)
-
-                FileUtils.rm(resultFile) if File.exists?(resultFile)
-                raise
-            end
-        end
-
-        require_relative resultFile
-    end
+def web_eval url
+  require 'open3'
+  eval(Open3.capture2('wget', url, '-O', '-', err: '/dev/null').first)
 end
 
