@@ -57,13 +57,6 @@ class TestRakeBuilderNames < Test::Unit::TestCase
         assert_equal(['target'], Names[@target])
       }
 
-      should('extract libs from GitSubmodule') {
-        @target.expects(:kind_of?).with(GitSubmodule).returns(true).at_least(0)
-        @target.expects(:libs).returns(['lib1', 'lib2']).at_least(0)
-
-        assert_equal(['lib1', 'lib2'], Names[@target])
-      }
-
       should('include target targetDependencies when present') {
         @target.expects(:kind_of?).with(Target).returns(true).at_least(0)
         @target.expects(:name).returns('target').at_least(0)

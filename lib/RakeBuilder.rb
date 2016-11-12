@@ -45,6 +45,13 @@ module RakeBuilder
         Array.new
       end
     end
+
+    def required *attributes
+      attributes.each { |sym|
+        value = send(sym)
+        raise RakeBuilder::MissingAttribute.new(sym.to_s) if value.nil? or (value.kind_of?(Array) and value.empty?)
+      }
+    end
   end
 end
 
@@ -78,24 +85,6 @@ module RakeBuilder
 end
 
 # -------------- V1
-
-class Pkg
-    def initialize name
-        @name = name
-    end
-
-    def self.[] *args
-        args.collect { |a| Pkg.new(a) }
-    end
-
-    def flags
-        @flags ||= Shellwords.split(`pkg-config --cflags #{@name}`.chomp)
-    end
-
-    def libs
-        @libs ||= Shellwords.split(`pkg-config --libs #{@name}`.chomp)
-    end
-end
 
 class Target
     include Rake::DSL
@@ -137,13 +126,7 @@ class Target
 
 private
     def _files
-      @files.flatten.collect { |x|
-        if x.kind_of?(Generated)
-          x.name
-        else
-          x
-        end
-      }
+      @files.flatten
     end
 
     def _sources
@@ -197,29 +180,6 @@ end
 
 # -------------- V2
 
-module RakeBuilder
-  class Names
-    def self.[](*args)
-      args.collect { |a|
-        if a.kind_of? Array
-          Names[*a]
-        elsif a.kind_of? GitSubmodule
-          a.libs
-        elsif a.kind_of? Target
-          Enumerator.new { |e|
-            e << a.name
-            e << Names[*a.targetDependencies] if a.respond_to? :targetDependencies
-          }.to_a
-        elsif a.kind_of? Symbol
-          a
-        else
-          a.to_s
-        end
-      }.flatten
-    end
-  end
-end
-
 class Target
   def createRakeTarget
     unique(@name) { |dir|
@@ -259,66 +219,207 @@ class SharedLibrary < Target
   end
 end
 
-class Executable < Target
-  attr_reader :targetDependencies
+# -------------- V3
 
-  def initialize(**opts, &block)
-    super
-
-    createRakeSourceTargets
-    createRakeTarget {
-      sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
-    }
+module RakeBuilder
+  class Names
+    def self.[](*args)
+      args.collect { |a|
+        if a.kind_of? Array
+          Names[*a]
+        elsif a.respond_to? :_names_
+          a._names_
+        elsif a.kind_of? Target
+          Enumerator.new { |e|
+            e << a.name
+            e << Names[*a.targetDependencies] if a.respond_to? :targetDependencies
+          }.to_a
+        elsif a.kind_of? Symbol
+          a
+        else
+          a.to_s
+        end
+      }.flatten
+    end
   end
 end
 
-class Generated < Target
-  attr_reader :targetDependencies
-  attr_accessor :code
+class Directory
+  include Rake::DSL
 
-  def initialize(code: nil, **opts, &block)
+  attr_reader :name
+
+  @@definedDirs = []
+
+  def initialize(name:)
+    @name = File.dirname(name)
+
+    yield(self) if block_given?
+
+    unless @@definedDirs.include?(@name) and @name != '.'
+      directory(@name)
+      @@definedDirs << @name
+    end
+  end
+
+  alias_method :_names_, :name
+end
+
+class SourceFile
+  include RakeBuilder::Utility
+  include RakeBuilder::Transform
+  include Rake::DSL
+
+  attr_accessor :name, :flags, :includes, :description
+  attr_reader :dependencies
+
+  def initialize(name: nil, flags: [], includes: [], description: nil)
+    @name = name
+    @flags = flags
+    @includes = includes
+    @description = description
+
+    yield(self) if block_given?
+
+    required(:name)
+
+    dir = RakeBuilder::Names[Directory.new(name: to_obj(@name))]
+    @dependencies = readMf(to_mf(@name))
+
+    file(to_mf(@name) => [ dir, @dependencies, @name ].flatten) {
+      sh "g++ #{_flags_} #{_includes_} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
+    }
+
+    desc @description if @description
+    file(to_obj(@name) => [ dir, to_mf(@name), @name ].flatten) {
+      sh "g++ #{_flags_} #{_includes_} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
+    }
+  end
+
+  def _names_
+    to_obj(@name)
+  end
+end
+
+class GeneratedFile
+  include RakeBuilder::Utility
+  include RakeBuilder::Transform
+  include Rake::DSL
+
+  attr_accessor :name, :code, :description
+
+  def initialize(name: nil, code: nil, description: nil)
+    @name = name
     @code = code
+    @description = description
 
-    super(:mandatory => [:code], **opts, &block)
+    yield(self) if block_given?
 
-    unique(@name) { |dir|
-      @targetDependencies = [ dir, _files, _dependencies ].flatten
+    required(:name, :code)
 
-      desc @description if @description
-      file(@name => @targetDependencies) {
-        @code.call
-      }
+    dir = RakeBuilder::Names[Directory.new(name: @name)]
+
+    desc @description if @description
+    file(@name => dir) {
+      @code.call(@name)
     }
   end
+
+  alias_method :_names_, :name
 end
 
-class GitSubmodule < Target
-  attr_accessor :name
+class GitSubmodule
+  include RakeBuilder::Utility
+  include RakeBuilder::Transform
+  include Rake::DSL
 
-  def initialize(**opts, &block)
-    super(mandatory: [:libs], **opts, &block)
+  attr_accessor :name, :libs
 
-    unless File.exists? "#{@name}/.git"
+  def initialize(name: nil, libs: [])
+    @name = name
+    @libs = libs
+
+    yield(self) if block_given?
+
+    required(:name, :libs)
+
+    unless File.directory? "#{@name}/.git"
       sh 'git submodule init'
       sh 'git submodule update'
     end
 
-    Dir.chdir(@name) {
-      sh "rake #{Shellwords.join(@libs)}"
+    @libs.each { |library|
+      file("#{@name}/#{library}" => []) {
+        Dir.chdir(@name) {
+          sh "rake #{Shellwords.escape(library)}"
+        }
+      }
     }
   end
 
-  def libs
-    @libs.collect { |x| "#{@name}/#{x}" }
-  end
-
-  def self.[] args = Hash.new
-    args.collect { |subModule, libs|
-      GitSubmodule.new { |mod|
-        mod.name = subModule
-        mod.libs = libs
-      }
+  def _names_
+    @libs.collect { |lib|
+      "#{@name}/#{lib}"
     }
   end
 end
 
+class Pkg
+  def initialize(name:)
+    @name = name
+  end
+
+  def self.[] *args
+    args.collect { |a| Pkg.new(name: a) }
+  end
+
+  def flags
+    @flags ||= Shellwords.split(`pkg-config --cflags #{@name}`.chomp)
+  end
+
+  def libs
+    @libs ||= Shellwords.split(`pkg-config --libs #{@name}`.chomp)
+  end
+
+  def _names_
+    Array.new
+  end
+end
+
+class Executable
+  include RakeBuilder::Utility
+  include RakeBuilder::Transform
+  include Rake::DSL
+
+  attr_accessor :name, :sources, :includes, :flags, :libs, :description
+
+  def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], description: nil)
+    @name = name
+    @sources = sources
+    @includes = includes
+    @flags = flags
+    @libs = libs
+    @description = description
+
+    yield(self) if block_given?
+
+    required(:name, :sources)
+  end
+
+  def _names_
+    [ @name, @sources ]
+  end
+end
+
+#class Executable < Target
+#  attr_reader :targetDependencies
+
+#  def initialize(**opts, &block)
+#    super
+
+#    createRakeSourceTargets
+#    createRakeTarget {
+#      sh "g++ #{_flags} #{to_obj(_sources).join(' ')} -o #{@name} #{_libs}".squeeze(' ')
+#    }
+#  end
+#end

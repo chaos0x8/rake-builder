@@ -28,7 +28,7 @@ require_relative 'TestableTarget'
 
 class TestRakeBuilder < Test::Unit::TestCase
     context('TestRakeBuilder') {
-        [ Generated, Executable, Library, SharedLibrary ].each { |clas|
+        [ Library, SharedLibrary ].each { |clas|
             context("Test#{clas}") {
                 should('yield class when creating') {
                     result = nil
@@ -40,7 +40,7 @@ class TestRakeBuilder < Test::Unit::TestCase
                     }
 
                     assert_equal(@sut, result)
-                } unless clas == Generated
+                }
 
                 should('raise when name not set in yielded block') {
                     assert_raise(RakeBuilder::MissingAttribute) {

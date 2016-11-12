@@ -119,13 +119,6 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
 
   context('TestRakeBuilderTarget (dispatch process)') {
     setup {
-      @generated = Generated.new { |t|
-        t.name = '|gen|'
-        t.code = Proc.new { }
-
-        t.expects(:unique).with(t.name).at_most(1)
-      }
-
       @tar = Target.new { |t|
         t.name = '|tar|'
 
@@ -142,10 +135,10 @@ class TestRakeBuilderTarget < Test::Unit::TestCase
     should('dispatch files') {
       @sut = TestableTarget.new { |t|
         t.name = 'sut'
-        t.files = [ 'a', @generated, FileList['x'], [ 'b', 'c' ]]
+        t.files = [ 'a', FileList['x'], [ 'b', 'c' ]]
       }
 
-      assert_equal(['a', '|gen|', 'x', 'b', 'c'], @sut.peek(:_files))
+      assert_equal(['a', 'x', 'b', 'c'], @sut.peek(:_files))
     }
 
     should('dispatch sources') {
