@@ -33,7 +33,7 @@ class TestWebRequire < Test::Unit::TestCase
 
     context('.web_require') {
       setup {
-        File.expects(:exists?).returns(false).at_least(0)
+        File.expects(:exist?).returns(false).at_least(0)
         self.expects(:system).at_most(0)
       }
 
@@ -45,7 +45,7 @@ class TestWebRequire < Test::Unit::TestCase
       }
 
       should('not download when file already exists') {
-        File.expects(:exists?).with("#{@path}/FileName.rb").returns(true).at_least(0)
+        File.expects(:exist?).with("#{@path}/FileName.rb").returns(true).at_least(0)
         self.expects(:require).with("#{@path}/FileName.rb")
 
         web_require(@url)

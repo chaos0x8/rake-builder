@@ -24,188 +24,160 @@ require 'shoulda'
 
 require_relative '../lib/RakeBuilder'
 
-require_relative 'TestableTarget'
-
-class TestRakeBuilderTarget < Test::Unit::TestCase
-  def self.blockConstructWay
-    proc { |name|
-      Target.new { |t|
-        t.name = name
-      }
-    }
+class TestTarget < Test::Unit::TestCase
+  def sourceFileMock
+    result = mock()
+    result.expects(:kind_of?).with(Array).returns(false).at_least(0)
+    result.expects(:kind_of?).with(SourceFile).returns(true).at_least(0)
+    result
   end
 
-  def self.optsConstructWay
-    proc { |name|
-      Target.new(name: name)
-    }
-  end
-
-  { 'block create' => blockConstructWay,
-    'opts create' => optsConstructWay }.each { |sufix, constructor|
-    context("TestRakeBuilder (#{sufix})") {
-      setup {
-        @sut = constructor.call('dummy')
-
-        @sut.expects(:directory).at_most(0)
-
-        @counter = 0
-      }
-
-      should('access given name') {
-        assert_equal('dummy', @sut.name)
-      }
-    }
-  }
-
-  [ { 'block create' => blockConstructWay },
-    { 'opts create' => optsConstructWay } ].sample.each { |sufix, constructor|
-    context("TestRakeBuilder (#{sufix})") {
-      setup {
-        @sut = constructor.call('dummy')
-
-        @sut.expects(:directory).at_most(0)
-
-        @counter = 0
-      }
-
-      should('add unique tasks') {
-        @sut.unique('task1') { @counter += 1}
-        @sut.unique('task2') { @counter += 1}
-
-        assert_equal(2, @counter)
-      }
-
-      should('raise when duplicated task is added') {
-        @sut.unique('task3') { @counter += 1}
-
-        assert_raise(RuntimeError) {
-          @sut.unique('task3') { @counter += 1}
-        }
-
-        assert_equal(1, @counter)
-      }
-
-      should('yield empty array for files with no dirname') {
-        @sut.unique('file') { |dir|
-          assert_equal([], dir)
+  [ Executable, Library ].each { |_class_|
+    context("Test#{_class_}") {
+      should('raise when name is missing') {
+        assert_raise(RakeBuilder::MissingAttribute) {
+          _class_.new(sources: [ 'main.cpp' ])
         }
       }
 
-      should('yield dirname') {
-        @sut.expects(:directory).with('dir')
-
-        @sut.unique('dir/file') { |dir|
-          assert_equal(['dir'], dir)
+      should('raise when sources are missing') {
+        assert_raise(RakeBuilder::MissingAttribute) {
+          _class_.new(name: 'name')
         }
       }
 
-      should('add only unique directory tasks') {
-        @sut.expects(:directory).with('dir1')
-        @sut.expects(:directory).with('dir2')
+      should('not create source rule when existing source is given') {
+        SourceFile.expects(:new).at_most(0)
 
-        @sut.unique('dir1/file1') { |dir| }
-        @sut.unique('dir1/file2') { |dir| }
-        @sut.unique('dir2/file1') { |dir| }
-      }
-
-      should('raise when block not passed') {
-        assert_raise(SyntaxError) {
-          @sut.unique('')
+        _class_.new(name: 'name') { |t|
+          t.sources << sourceFileMock
         }
       }
-    }
-  }
 
-  context('TestRakeBuilderTarget (dispatch process)') {
-    setup {
-      @tar = Target.new { |t|
-        t.name = '|tar|'
+      context('with some sources') {
+        setup {
+          @sources = [ 'main.cpp', 'library.cpp' ]
+          @mocks = @sources.collect { |x| ".obj/#{x.ext('.o')}" }
+        }
 
-        t.expects(:unique).with(t.name).at_most(1)
+        should('create source rules using constructor') {
+          SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
+          SourceFile.expects(:new).with { |x| x[:name] ==  'library.cpp' }.returns(sourceFileMock)
+
+          _class_.new(name: 'name', sources: @sources)
+        }
+
+        should('create source rules using yielded self') {
+          SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
+          SourceFile.expects(:new).with { |x| x[:name] == 'library.cpp'}.returns(sourceFileMock)
+
+          _class_.new(name: 'name') { |t|
+            t.sources << @sources
+          }
+        }
+
+        should('be convertable to names') {
+          sut = _class_.new(name: 'name') { |t|
+            t.expects(:file).at_least(0)
+
+            t.sources << @sources
+          }
+
+          assert_equal(['name', '.obj/main.o', '.obj/library.o'], RakeBuilder::Names[sut])
+        }
+
+        should('be convertable to names with other Target') {
+          lib = Library.new(name: 'libname.a') { |t|
+            t.sources << 'hello.cpp'
+          }
+
+          sut = _class_.new(name: 'name', sources: 'main.cpp', libs: [ lib, '-lpthread' ])
+
+          assert_equal(['name', '.obj/main.o', 'libname.a', '.obj/hello.o'], RakeBuilder::Names[sut])
+        } if _class_ != Library
+
+        should('be convertable to build') {
+          sut = _class_.new(name: 'name') { |t|
+            t.sources << 'hello.cpp'
+          }
+
+          assert_equal(['name'], RakeBuilder::Build[sut])
+        } if _class_ != Executable
+
+        should('create exec rule') {
+          _class_.new(name: 'name') { |t|
+            t.expects(:file).at_least(0)
+            t.expects(:file).with('name' => [ '.obj/main.o', '.obj/library.o' ])
+
+            t.sources << @sources
+          }
+        }
+
+        should('remove duplicated flags') {
+          _class_.new(name: 'name') { |t|
+            t.expects(:file).at_least(0)
+
+            t.sources << @sources
+            t.flags << [ '-pthread', '-DNDEBUG', '-pthread', '--std=c++11' ]
+
+            assert_equal(['-pthread', '-DNDEBUG', '--std=c++11'].sort, RakeBuilder::Build[t.flags].sort)
+          }
+        }
+
+        should('merge duplicated \'--std=\' like flags') {
+          _class_.new(name: 'name') { |t|
+            t.expects(:file).at_least(0)
+
+            t.sources << @sources
+            t.flags << [ '--std=c++11', '--std=c++14' ]
+            t.flags << [ '-std=c++11', '-std=c++14' ]
+
+            assert_equal(['--std=c++14'], RakeBuilder::Build[t.flags])
+          }
+        }
+
+        context('with pkgs') {
+          setup {
+            require_relative 'Stubs/PkgsStub'
+            @pkgs = PkgsStub.new
+            RakeBuilder::Pkgs.expects(:new).returns(@pkgs).with { |pkgs, flags:, libs:|
+              @pkgs.init(pkgs, flags, libs)
+            }
+          }
+
+          should('add flags from pkg') {
+            _class_.new(name: 'name') { |t|
+              t.expects(:file).at_least(0)
+
+              @pkgs.expects(:<<).with('ruby') {
+                @pkgs.flags << 'flag'
+              }
+
+              t.sources << @sources
+              t.pkgs << 'ruby'
+
+              assert_equal(['flag'], RakeBuilder::Build[t.flags])
+            }
+          }
+
+          should('add libs from pkg') {
+            _class_.new(name: 'name') { |t|
+              t.expects(:file).at_least(0)
+
+              @pkgs.expects(:<<).with('ruby') {
+                @pkgs.libs << 'lib'
+              }
+
+              t.sources << @sources
+              t.pkgs << 'ruby'
+
+              assert_equal(['lib'], RakeBuilder::Build[t.libs])
+            }
+          }
+        }
       }
-
-      @pkg = mock()
-      @pkg.expects(:kind_of?).returns(false).at_least(0)
-      @pkg.expects(:kind_of?).with(Pkg).returns(true).at_least(0)
-      @pkg.expects(:flags).returns(['f1', 'f2']).at_least(0)
-      @pkg.expects(:libs).returns(['l1', 'l2']).at_least(0)
-    }
-
-    should('dispatch files') {
-      @sut = TestableTarget.new { |t|
-        t.name = 'sut'
-        t.files = [ 'a', FileList['x'], [ 'b', 'c' ]]
-      }
-
-      assert_equal(['a', 'x', 'b', 'c'], @sut.peek(:_files))
-    }
-
-    should('dispatch sources') {
-      @sut = TestableTarget.new { |t|
-        t.name = 'sut'
-        t.sources = [ 'a', FileList['x'], [ 'b', 'c' ]]
-      }
-
-      assert_equal(['a', 'x', 'b', 'c'], @sut.peek(:_sources))
-    }
-
-    should('dispatch includes') {
-      @sut = TestableTarget.new { |t|
-        t.name = 'sut'
-        t.includes = [ 'a', FileList['x'], [ 'b', 'c' ]]
-      }
-
-      assert_equal('-Ia -Ix -Ib -Ic', @sut.peek(:_includes))
-    }
-
-    should('dispatch flags and libs') {
-      @sut = TestableTarget.new { |t|
-        t.name = 'sut'
-        t.flags = [ 'a', [ 'b' ]]
-        t.libs = [ 'x', @pkg, [ 'y', 'z']]
-      }
-
-      assert_equal('a b f1 f2', @sut.peek(:_flags))
-      assert_equal('x l1 l2 y z', @sut.peek(:_libs))
-    }
-
-    should('dispatch dependencies') {
-      @sut = TestableTarget.new { |t|
-        t.name = 'sut'
-        t.libs = [ 'x', @tar, @gen, @pkg, [ 'y', 'z']]
-      }
-
-      assert_equal(['|tar|'], @sut.peek(:_dependencies))
-    }
-  }
-
-  context('TestRakeBuilderTarget (compatibility with FileList)') {
-    setup {
-      @sut = TestableTarget.new { |t|
-        t.name = 'name'
-        t.sources = FileList['*']
-        t.includes = FileList['*']
-        t.files = FileList['*']
-        t.libs = FileList['*']
-      }
-    }
-
-    should('sources works with Rake::FileList') {
-      assert_equal(FileList, @sut.peek(:_sources).class)
-    }
-
-    should('includes works with Rake::FileList') {
-      assert_equal(String, @sut.peek(:_includes).class)
-    }
-
-    should('files works with Rake::FileList') {
-      assert_equal(FileList, @sut.peek(:_files).class)
-    }
-
-    should('libs works with Rake::FileList') {
-      assert_equal(String, @sut.peek(:_libs).class)
     }
   }
 end
+
 

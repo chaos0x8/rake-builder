@@ -18,14 +18,11 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-def web_require url
-  resultFile = "#{File.dirname(__FILE__)}/#{File.basename(url)}"
-  system 'wget', url unless File.exist?(resultFile)
-  require resultFile
-end
+class PkgsStub
+  attr_accessor :flags, :libs
 
-def web_eval url
-  require 'open3'
-  eval(Open3.capture2('wget', url, '-O', '-', err: '/dev/null').first)
+  def init(pkgs, flags, libs)
+    @flags = flags
+    @libs = libs
+  end
 end
-

@@ -38,7 +38,7 @@ class TestRakeBuilderUtility < Test::Unit::TestCase
                 ' Source/Game/Source/Unit.hpp Source/Interfaces/Source/IObject.hpp'
       }
 
-      File.expects(:exists?).returns(false).at_least(0)
+      File.expects(:exist?).returns(false).at_least(0)
 
       self.expects(:sh).at_most(0)
     }
@@ -52,22 +52,22 @@ class TestRakeBuilderUtility < Test::Unit::TestCase
                    'Source/Game/Source/Unit.hpp',
                    'Source/Interfaces/Source/IObject.hpp' ]
 
-      File.expects(:exists?).with { |x| expected.include?(x) }.returns(true).at_least(0)
-      File.expects(:exists?).with(@filename).returns(true).at_least(0)
+      File.expects(:exist?).with { |x| expected.include?(x) }.returns(true).at_least(0)
+      File.expects(:exist?).with(@filename).returns(true).at_least(0)
 
       assert_equal(expected, readMf(@filename))
     }
 
     should('delete .mf file when any of dependent files is missing') {
-      File.expects(:exists?).returns(true).at_least(0)
-      File.expects(:exists?).with('Source/Game/Source/Unit.hpp').returns(false).at_least(0)
+      File.expects(:exist?).returns(true).at_least(0)
+      File.expects(:exist?).with('Source/Game/Source/Unit.hpp').returns(false).at_least(0)
       self.expects(:sh).with("rm #{@filename}")
 
       assert_equal([], readMf(@filename))
     }
 
     should('return empty array when file doesn\'t exists') {
-      File.expects(:exists?).with(@filename).returns(false).at_least(0)
+      File.expects(:exist?).with(@filename).returns(false).at_least(0)
 
       assert_equal([], readMf(@filename))
     }
