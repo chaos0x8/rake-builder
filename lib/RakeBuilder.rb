@@ -321,12 +321,12 @@ class SourceFile
     required(:name)
 
     dir = RakeBuilder::Names[Directory.new(name: to_obj(@name))]
-    file(to_mf(@name) => [ dir, requirements, readMf(to_mf(@name)), @name ].flatten) {
+    file(to_mf(@name) => [ dir, @requirements, readMf(to_mf(@name)), @name ].flatten) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
     }
 
     desc @description if @description
-    file(to_obj(@name) => [ dir, requirements, to_mf(@name), @name ].flatten) {
+    file(to_obj(@name) => [ dir, @requirements, to_mf(@name), @name ].flatten) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
     }
   end
