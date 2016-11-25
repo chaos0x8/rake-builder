@@ -378,17 +378,17 @@ class GitSubmodule
 
     required(:name, :libs)
 
-    unless File.directory? "#{@name}/.git"
+    file("#{@name}/.git") {
       sh 'git submodule init'
       sh 'git submodule update'
-    end
+    }
 
     @libs.each { |library|
-      file("#{@name}/#{library}" => []) {
-        Dir.chdir(@name) {
-          sh "rake #{Shellwords.escape(library)}"
-        }
+      file("#{@name}/#{library}" => ["#{@name}/.git"]) {
+        sh "cd #{@name} && rake #{Shellwords.escape(library)}"
       }
+
+      Rake::Task["#{@name}/#{library}"].invoke
     }
   end
 
