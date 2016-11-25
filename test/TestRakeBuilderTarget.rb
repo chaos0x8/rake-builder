@@ -113,6 +113,19 @@ class TestTarget < Test::Unit::TestCase
           }
         }
 
+        should('create rules with requirements') {
+          SourceFile.expects(:new).with { |x|
+            x[:name] == 'main.cpp' and
+            RakeBuilder::Names[x[:requirements]] == ['hello.hpp']
+          }.returns('.obj/main.o')
+
+          _class_.new(name: 'name', requirements: 'hello.hpp') { |t|
+            t.expects(:file).with('name' => [ 'hello.hpp' ,'.obj/main.o' ] )
+
+            t.sources << 'main.cpp'
+          }
+        }
+
         should('remove duplicated flags') {
           _class_.new(name: 'name') { |t|
             t.expects(:file).at_least(0)

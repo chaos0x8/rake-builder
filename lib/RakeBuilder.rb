@@ -131,6 +131,10 @@ module RakeBuilder
       self
     end
 
+    def _names_
+      raise TypeError.new('This type should not be used by Names')
+    end
+
     def _build_
       @value + _std_
     end
@@ -145,29 +149,45 @@ module RakeBuilder
     end
   end
 
-  class Includes
-    def initialize includes
+  module ExOnNames
+    def _names_
+      raise TypeError.new('This type should not be used by Names')
+    end
+  end
+
+  module ExOnBuild
+    def _build_
+      raise TypeError.new('This type should not be used by Build')
+    end
+  end
+
+  class ArrayWrapper
+    include ExOnNames
+    include ExOnBuild
+
+    def initialize item
       @value = Array.new
-
-      self << includes
+      self << item
     end
 
-    def << includes
-      @value << includes
+    def << item
+      @value << item
       @value = @value.flatten.uniq
-      self
     end
+  end
 
+  class Includes < ArrayWrapper
     def _build_
       @value.collect { |inc| "-I#{inc}" }
     end
   end
 
   class Sources
-    def initialize(sources, flags:, includes:)
+    def initialize(sources, flags:, includes:, requirements:)
       @value = Array.new
       @flags = flags
       @includes = includes
+      @requirements = requirements
 
       self << sources
     end
@@ -177,7 +197,7 @@ module RakeBuilder
         if src.kind_of? SourceFile
           @value << src
         else
-          @value << SourceFile.new(name: src, flags: @flags, includes: @includes)
+          @value << SourceFile.new(name: src, flags: @flags, includes: @includes, requirements: @requirements)
         end
       }
     end
@@ -191,19 +211,7 @@ module RakeBuilder
     end
   end
 
-  class Libs
-    def initialize libs
-      @value = Array.new
-
-      self << libs
-    end
-
-    def << libs
-      @value << libs
-      @value = @value.flatten.uniq
-      self
-    end
-
+  class Libs < ArrayWrapper
     def _names_
       @value.select { |x| x.respond_to?(:_names_) }
     end
@@ -214,6 +222,9 @@ module RakeBuilder
   end
 
   class Pkgs
+    include ExOnNames
+    include ExOnBuild
+
     def initialize(pkgs, flags:, libs:)
       @flags = flags
       @libs = libs
@@ -228,6 +239,12 @@ module RakeBuilder
       }
     end
   end
+
+  class Requirements < ArrayWrapper
+    def _names_
+      @value
+    end
+  end
 end
 
 module RakeBuilder
@@ -238,15 +255,16 @@ module RakeBuilder
       include Rake::DSL
 
       attr_accessor :name, :description
-      attr_reader :flags, :includes, :sources, :libs, :pkgs
+      attr_reader :flags, :includes, :sources, :libs, :pkgs, :requirements
 
-      def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], description: nil)
+      def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
         @name = name
         @flags = RakeBuilder::Flags.new(flags)
         @libs = RakeBuilder::Libs.new(libs)
         @pkgs = RakeBuilder::Pkgs.new(pkgs, flags: @flags, libs: @libs)
         @includes = RakeBuilder::Includes.new(includes)
-        @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes)
+        @requirements = RakeBuilder::Requirements.new(requirements)
+        @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes, requirements: @requirements)
         @description = description
 
         yield(self) if block_given?
@@ -291,23 +309,24 @@ class SourceFile
 
   attr_accessor :name, :flags, :includes, :description
 
-  def initialize(name: nil, flags: [], includes: [], description: nil)
+  def initialize(name: nil, flags: [], includes: [], requirements: [], description: nil)
     @name = name
     @flags = flags
     @includes = includes
     @description = description
+    @requirements = RakeBuilder::Names[requirements]
 
     yield(self) if block_given?
 
     required(:name)
 
     dir = RakeBuilder::Names[Directory.new(name: to_obj(@name))]
-    file(to_mf(@name) => [ dir, readMf(to_mf(@name)), @name ].flatten) {
+    file(to_mf(@name) => [ dir, requirements, readMf(to_mf(@name)), @name ].flatten) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
     }
 
     desc @description if @description
-    file(to_obj(@name) => [ dir, to_mf(@name), @name ].flatten) {
+    file(to_obj(@name) => [ dir, requirements, to_mf(@name), @name ].flatten) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
     }
   end
@@ -385,7 +404,7 @@ class Executable < RakeBuilder::Detail::Target
     super(*args, **opts)
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
-    file(@name => RakeBuilder::Names[dir, @sources, @libs]) {
+    file(@name => RakeBuilder::Names[dir, @requirements, @sources, @libs]) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@sources)} -o #{@name} #{_build_join_(@libs)}".squeeze(' ')
     }
   end
@@ -400,7 +419,7 @@ class Library < RakeBuilder::Detail::Target
     super(*args, **opts)
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
-    file(@name => RakeBuilder::Names[dir, @sources]) {
+    file(@name => RakeBuilder::Names[dir, @requirements, @sources]) {
       sh "ar vsr #{@name} #{_build_join_(@sources)}"
     }
   end
