@@ -34,18 +34,28 @@ class TestWebRequire < Test::Unit::TestCase
     context('.web_require') {
       setup {
         File.expects(:exist?).returns(false).at_least(0)
+        File.expects(:size).returns(0).at_least(0)
         self.expects(:system).at_most(0)
       }
 
-      should('download file it doesn\'t exists') {
-        self.expects(:system).with('wget', @url)
+      should('download file if doesn\'t exists') {
+        self.expects(:system).with('wget', @url, '-O', "#{@path}/FileName.rb")
         self.expects(:require).with("#{@path}/FileName.rb")
 
         web_require(@url)
       }
 
-      should('not download when file already exists') {
+      should('download file if it\' empty') {
         File.expects(:exist?).with("#{@path}/FileName.rb").returns(true).at_least(0)
+        self.expects(:system).with('wget', @url, '-O', "#{@path}/FileName.rb")
+        self.expects(:require).with("#{@path}/FileName.rb")
+
+        web_require(@url)
+      }
+
+      should('not download when file already exists with content') {
+        File.expects(:exist?).with("#{@path}/FileName.rb").returns(true).at_least(0)
+        File.expects(:size).with("#{@path}/FileName.rb").returns(42).at_least(0)
         self.expects(:require).with("#{@path}/FileName.rb")
 
         web_require(@url)

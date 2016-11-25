@@ -62,6 +62,12 @@ module RakeBuilder
     end
   end
 
+  class MissingPkg < RuntimeError
+    def initialize pkg
+      super("Missing pkg '#{pkg}'")
+    end
+  end
+
   module Transform
     def to_obj name
       chExt(name, '.o')
@@ -234,9 +240,17 @@ module RakeBuilder
 
     def << pkgs
       [ pkgs ].flatten.reject { |pkg| pkg.nil? }.each { |pkg|
-        @flags << Shellwords.split(`pkg-config --cflags #{Shellwords.escape(pkg)}`.chomp)
-        @libs << Shellwords.split(`pkg-config --libs #{Shellwords.escape(pkg)}`.chomp)
+        @flags << pkgConfig('--cflags', pkg)
+        @libs << pkgConfig('--libs', pkg)
       }
+    end
+
+  private
+    def pkgConfig option, pkg
+      require 'open3'
+      o, s = Open3.capture2e('pkg-config', option, pkg)
+      raise MissingPkg.new(pkg) unless s.exitstatus == 0
+      Shellwords.split(o)
     end
   end
 

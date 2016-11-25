@@ -24,26 +24,37 @@ require 'shoulda'
 
 require_relative '../lib/RakeBuilder'
 
-class TesGitSubmodule < Test::Unit::TestCase
-  context('TesGitSubmodule') {
+class TestGitSubmodule < Test::Unit::TestCase
+  def expectInvoke taskName
+    mockObj = mock()
+    Rake::Task.expects(:[]).with(taskName).returns(mockObj).at_least(0)
+    mockObj.expects(:invoke)
+  end
+
+  context('TestGitSubmodule') {
     setup {
       @seq = sequence('rule sequence')
 
       File.expects(:directory?).returns(false).at_least(0)
+
+      mockObj = mock()
+      Rake::Task.expects(:[]).returns(mockObj).at_least(0)
+      mockObj.expects(:invoke).at_least(0)
     }
 
     should('init git submodule') {
+      expectInvoke 'cppCommon/lib/libcommon.a'
+
       GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a']) { |t|
-        t.expects(:sh).with('git submodule init').in_sequence(@seq)
-        t.expects(:sh).with('git submodule update').in_sequence(@seq)
-        t.expects(:file).at_least(0).in_sequence(@seq)
+        t.expects(:file).with('cppCommon/.git')
+        t.expects(:file).with('cppCommon/lib/libcommon.a' => [ 'cppCommon/.git' ])
       }
     }
 
     should('raise when name is missing') {
       assert_raise(RakeBuilder::MissingAttribute) {
         GitSubmodule.new(libs: ['lib/libcommon.a']) { |t|
-          t.expects(:sh).at_most(0)
+          t.expects(:file).never
         }
       }
     }
@@ -51,38 +62,23 @@ class TesGitSubmodule < Test::Unit::TestCase
     should('raise when libs are missing') {
       assert_raise(RakeBuilder::MissingAttribute) {
         GitSubmodule.new(name: 'cppCommon') { |t|
-          t.expects(:sh).at_most(0)
+          t.expects(:file).never
         }
       }
     }
 
     should('be converted by Names') {
       git = GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a', 'lib/libfoo.a']) { |t|
-        t.expects(:sh).at_least(0)
         t.expects(:file).at_least(0)
       }
       assert_equal(['cppCommon/lib/libcommon.a', 'cppCommon/lib/libfoo.a'], RakeBuilder::Names[git])
     }
 
-    context('with module initialized') {
-      setup {
-        File.expects(:directory?).with('cppCommon/.git').returns(true).at_least(0)
-      }
-
-      should('not init git submodule') {
-        GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a']) { |t|
-          t.expects(:sh).at_most(0)
-          t.expects(:file).at_least(0)
-        }
-      }
-
-      should('create file rules') {
-        GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a', 'lib/libfoo.a']) { |t|
-          t.expects(:sh).at_most(0)
-
-          t.expects(:file).with { |x| x.keys.first == 'cppCommon/lib/libcommon.a' }
-          t.expects(:file).with { |x| x.keys.first == 'cppCommon/lib/libfoo.a' }
-        }
+    should('create file rules') {
+      GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a', 'lib/libfoo.a']) { |t|
+        t.expects(:file).with('cppCommon/.git')
+        t.expects(:file).with('cppCommon/lib/libcommon.a' => [ 'cppCommon/.git' ])
+        t.expects(:file).with('cppCommon/lib/libfoo.a' => [ 'cppCommon/.git' ])
       }
     }
   }
