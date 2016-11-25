@@ -233,7 +233,7 @@ module RakeBuilder
     end
 
     def << pkgs
-      [ pkgs ].flatten.each { |pkg|
+      [ pkgs ].flatten.reject { |pkg| pkg.nil? }.each { |pkg|
         @flags << Shellwords.split(`pkg-config --cflags #{Shellwords.escape(pkg)}`.chomp)
         @libs << Shellwords.split(`pkg-config --libs #{Shellwords.escape(pkg)}`.chomp)
       }
