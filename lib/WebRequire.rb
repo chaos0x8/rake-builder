@@ -20,7 +20,7 @@
 
 def web_require url
   resultFile = "#{File.dirname(__FILE__)}/#{File.basename(url)}"
-  system 'wget', url unless File.exist?(resultFile)
+  system 'wget', url, '-O', resultFile if not File.exist?(resultFile) or File.size(resultFile) == 0
   require resultFile
 end
 
