@@ -126,13 +126,17 @@ module RakeBuilder
     end
 
     def << flags
-      @value << flags
-      @value = @value.flatten.uniq
+      if flags.kind_of? Flags
+        self << flags._build_
+      else
+        @value << flags
+        @value = @value.flatten.uniq
 
-      @std << @value.select { |x| x.match('-std=') }
-      @std.flatten.uniq
+        @std << @value.select { |x| x.match('-std=') }
+        @std.flatten.uniq
 
-      @value = @value.reject { |x| x.match('-std=') }
+        @value = @value.reject { |x| x.match('-std=') }
+      end
 
       self
     end
@@ -177,9 +181,18 @@ module RakeBuilder
     end
 
     def << item
-      @value << item
-      @value = @value.flatten.uniq
+      if item.kind_of? ArrayWrapper
+        self << item.value
+      else
+        @value << item
+        @value = @value.flatten.uniq
+      end
+
+      self
     end
+
+  protected
+    attr_reader :value
   end
 
   class Includes < ArrayWrapper
@@ -206,6 +219,8 @@ module RakeBuilder
           @value << SourceFile.new(name: src, flags: @flags, includes: @includes, requirements: @requirements)
         end
       }
+
+      self
     end
 
     def empty?
@@ -214,6 +229,16 @@ module RakeBuilder
 
     def _names_
       @value
+    end
+
+    def - other
+      @value.reject { |val|
+        name = (val.kind_of?(SourceFile) ? val.name : val)
+        [ other ].flatten.any? { |item|
+          itemName = (item.kind_of?(SourceFile) ? item.name : item)
+          name == itemName
+        }
+      }
     end
   end
 
@@ -243,6 +268,8 @@ module RakeBuilder
         @flags << pkgConfig('--cflags', pkg)
         @libs << pkgConfig('--libs', pkg)
       }
+
+      self
     end
 
   private
@@ -367,7 +394,6 @@ class GeneratedFile
     required(:name, :code)
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
-
     desc @description if @description
     file(@name => dir) {
       @code.call(@name)
@@ -418,6 +444,7 @@ class Executable < RakeBuilder::Detail::Target
     super(*args, **opts)
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
+    desc @description if @description
     file(@name => RakeBuilder::Names[dir, @requirements, @sources, @libs]) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@sources)} -o #{@name} #{_build_join_(@libs)}".squeeze(' ')
     }
@@ -433,6 +460,7 @@ class Library < RakeBuilder::Detail::Target
     super(*args, **opts)
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
+    desc @description if @description
     file(@name => RakeBuilder::Names[dir, @requirements, @sources]) {
       sh "ar vsr #{@name} #{_build_join_(@sources)}"
     }
