@@ -47,6 +47,15 @@ class TestSources < Test::Unit::TestCase
       assert(result.class == Array)
       assert_equal(['source1', 'source3'].sort, RakeBuilder::Names[result].sort)
     }
+
+    should('create sources from other sources') {
+      other = RakeBuilder::Sources.new(@sources, **@opts)
+      sut = RakeBuilder::Sources.new([], **@opts)
+
+      sut << other
+
+      assert_equal(['source1', 'source2', 'source3'].sort, RakeBuilder::Names[sut].sort)
+    }
   }
 end
 

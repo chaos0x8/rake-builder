@@ -213,7 +213,9 @@ module RakeBuilder
 
     def << sources
       [ sources ].flatten.each { |src|
-        if src.kind_of? SourceFile
+        if src.kind_of? Sources
+          self << src.value
+        elsif src.kind_of? SourceFile
           @value << src
         else
           @value << SourceFile.new(name: src, flags: @flags, includes: @includes, requirements: @requirements)
@@ -240,6 +242,9 @@ module RakeBuilder
         }
       }
     end
+
+  protected
+    attr_reader :value
   end
 
   class Libs < ArrayWrapper

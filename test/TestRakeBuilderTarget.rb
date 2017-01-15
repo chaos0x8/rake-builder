@@ -27,7 +27,7 @@ require_relative '../lib/RakeBuilder'
 class TestTarget < Test::Unit::TestCase
   def sourceFileMock
     result = mock()
-    result.expects(:kind_of?).with(Array).returns(false).at_least(0)
+    result.expects(:kind_of?).returns(false).at_least(0)
     result.expects(:kind_of?).with(SourceFile).returns(true).at_least(0)
     result
   end
