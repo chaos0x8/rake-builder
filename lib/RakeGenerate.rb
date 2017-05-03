@@ -19,9 +19,10 @@
 require_relative 'RakeBuilder'
 
 module Generate
-  def self.includeDirectory(dirName)
+  def self.includeDirectory(dirName, requirements: [])
     GeneratedFile.new { |t|
       t.name = "#{dirName}.hpp"
+      t.requirements << requirements
       t.requirements << Dir["#{dirName}/*.h", "#{dirName}/*.hpp"]
       t.code = proc {
         $stdout.puts "Generating '#{t.name}'..."
@@ -29,7 +30,7 @@ module Generate
         File.open(t.name, 'w') { |f|
           f.write "#pragma once\n"
           f.write "\n"
-          t.requirements.each { |req|
+          Dir["#{dirName}/*.h", "#{dirName}/*.hpp"].each { |req|
             f.write "#include \"#{File.basename(dirName)}/#{File.basename(req)}\"\n"
           }
         }
