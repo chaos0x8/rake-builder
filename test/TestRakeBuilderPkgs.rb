@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2016, <https://github.com/chaos0x8>
+# Copyright (c) 2016 - 2017, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -25,31 +25,51 @@ require 'shoulda'
 require_relative '../lib/RakeBuilder'
 
 class TestPkgs < Test::Unit::TestCase
+  def self.shouldReturn
+    proc {
+      should('returns flags') {
+        assert_equal(Shellwords.split(`pkg-config --cflags ruby`), @flags.flatten)
+      }
+
+      should('returns libs') {
+        assert_equal(Shellwords.split(`pkg-config --libs ruby`), @libs.flatten)
+      }
+    }
+  end
+
   context('TestPkgs') {
     setup {
       @flags = Array.new
       @libs = Array.new
     }
 
-    should('returns flags') {
-      RakeBuilder::Pkgs.new('ruby', flags: @flags, libs: @libs)
-
-      assert_equal(Shellwords.split(`pkg-config --cflags ruby`), @flags.flatten)
-    }
-
-    should('returns libs') {
-      RakeBuilder::Pkgs.new('ruby', flags: @flags, libs: @libs)
-
-      assert_equal(Shellwords.split(`pkg-config --libs ruby`), @libs.flatten)
-    }
-
     should('raises when pkg doesn\'t exists') {
       assert_raise(RakeBuilder::MissingPkg) {
         RakeBuilder::Pkgs.new('rubyfsdfsdf', flags: @flags, libs: @libs)
       }
+
+      assert_equal([], @flags)
+      assert_equal([], @libs)
+    }
+
+    context('created from existing pkg') {
+      setup {
+        @sut = RakeBuilder::Pkgs.new('ruby', flags: @flags, libs: @libs)
+      }
+
+      merge_block(&shouldReturn)
+    }
+
+    context('created from other pkg') {
+      setup {
+        @sut = RakeBuilder::Pkgs.new(
+          RakeBuilder::Pkgs.new('ruby', flags: Array.new, libs: Array.new),
+          flags: @flags,
+          libs: @libs)
+      }
+
+      merge_block(&shouldReturn)
     }
   }
 end
-
-
 

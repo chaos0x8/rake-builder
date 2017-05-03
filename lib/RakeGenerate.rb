@@ -1,8 +1,6 @@
-#!/usr/bin/ruby
-
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2016, <https://github.com/chaos0x8>
+# Copyright (c) 2017, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -18,32 +16,25 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-require_relative '../lib/RakeBuilder'
+require_relative 'RakeBuilder'
 
-libs = Array.new
+module Generate
+  def self.includeDirectory(dirName)
+    GeneratedFile.new { |t|
+      t.name = "#{dirName}.hpp"
+      t.requirements << Dir["#{dirName}/*.h", "#{dirName}/*.hpp"]
+      t.code = proc {
+        $stdout.puts "Generating '#{t.name}'..."
 
-libs << Library.new { |t|
-    t.name = 'bin/libmain.a'
-    t.sources << Dir['Source/*.cpp'] - [ 'Source/main.cpp' ]
-    t.includes << [ 'Source' ]
-    t.flags << [ '--std=c++0x' ]
-    t.pkgs << [ 'ruby' ]
-    t.description = 'Build testable library'
-}
+        File.open(t.name, 'w') { |f|
+          f.write "#pragma once\n"
+          f.write "\n"
+          t.requirements.each { |req|
+            f.write "#include \"#{File.basename(dirName)}/#{File.basename(req)}\"\n"
+          }
+        }
+      }
+    }
+  end
+end
 
-main = Executable.new { |t|
-    t.name = 'bin/main'
-    t.sources << Dir[ 'Source/main.cpp' ]
-    t.includes << [ 'Source' ]
-    t.flags << [ '--std=c++0x' ]
-    t.libs << [ '-lpthread', libs ]
-    t.pkgs << ['ruby']
-    t.description = 'Build testable application'
-}
-
-multitask(default: RakeBuilder::Names[main])
-
-task(:clean) {
-  sh "rm -rf bin" if File.directory?('bin')
-  sh "rm -rf .obj" if File.directory?('.obj')
-}

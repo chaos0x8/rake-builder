@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2016, <https://github.com/chaos0x8>
+# Copyright (c) 2016 - 2017, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any

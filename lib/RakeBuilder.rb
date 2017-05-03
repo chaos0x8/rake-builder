@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2016, <https://github.com/chaos0x8>
+# Copyright (c) 2016 - 2017, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -171,6 +171,12 @@ module RakeBuilder
     end
   end
 
+  module VIterable
+    def each(&block)
+      @value.each(&block)
+    end
+  end
+
   class ArrayWrapper
     include ExOnNames
     include ExOnBuild
@@ -264,17 +270,28 @@ module RakeBuilder
     def initialize(pkgs, flags:, libs:)
       @flags = flags
       @libs = libs
+      @value = Array.new
 
       self << pkgs
     end
 
     def << pkgs
       [ pkgs ].flatten.reject { |pkg| pkg.nil? }.each { |pkg|
-        @flags << pkgConfig('--cflags', pkg)
-        @libs << pkgConfig('--libs', pkg)
+        if pkg.kind_of? Pkgs
+          self << pkg.value
+        else
+          @flags << pkgConfig('--cflags', pkg)
+          @libs << pkgConfig('--libs', pkg)
+          @value << pkg
+        end
       }
 
       self
+    end
+
+    def value
+      @value.flatten.uniq
+      @value
     end
 
   private
@@ -287,6 +304,8 @@ module RakeBuilder
   end
 
   class Requirements < ArrayWrapper
+    include VIterable
+
     def _names_
       @value
     end
@@ -387,11 +406,12 @@ class GeneratedFile
   include RakeBuilder::Transform
   include Rake::DSL
 
-  attr_accessor :name, :code, :description
+  attr_accessor :name, :code, :description, :requirements
 
-  def initialize(name: nil, code: nil, description: nil)
+  def initialize(name: nil, code: nil, description: nil, requirements: [])
     @name = name
     @code = code
+    @requirements = RakeBuilder::Requirements.new(requirements)
     @description = description
 
     yield(self) if block_given?
@@ -400,7 +420,7 @@ class GeneratedFile
 
     dir = RakeBuilder::Names[Directory.new(name: @name)]
     desc @description if @description
-    file(@name => dir) {
+    file(@name => RakeBuilder::Names[dir, @requirements]) {
       @code.call(@name)
     }
   end
