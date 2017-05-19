@@ -153,44 +153,30 @@ module RakeBuilder
     end
   end
 
-  class Flags
-    def initialize flags
-      @value = Array.new
-      @std = Array.new
-
-      self << flags
-    end
-
-    def << flags
-      if flags.kind_of? Flags
-        self << flags._build_
-      else
-        @value << flags
-        @value = @value.flatten.uniq
-
-        @std << @value.select { |x| x.match('-std=') }
-        @std.flatten.uniq
-
-        @value = @value.reject { |x| x.match('-std=') }
-      end
-
-      self
-    end
-
-    def _names_
-      raise TypeError.new('This type should not be used by Names')
-    end
-
+  class Flags < ArrayWrapper
     def _build_
-      @value + _std_
+      build = RakeBuilder::Build[@value]
+
+      flags = []
+      stdFlags = []
+
+      build.each { |flag|
+        if flag.match(/^-*std=/)
+          stdFlags << flag
+        else
+          flags << flag
+        end
+      }
+
+      flags + _std(stdFlags)
     end
 
   private
-    def _std_
-      if maxStd = @std.flatten.collect { |x| x.match(/-std=(.*)$/)[1] }.max
+    def _std stdFlags
+      if maxStd = stdFlags.flatten.collect { |x| x.match(/-std=(.*)$/)[1] }.max
         [ "--std=#{maxStd}" ]
       else
-        Array.new
+        []
       end
     end
   end
@@ -198,6 +184,15 @@ module RakeBuilder
   module VIterable
     def each(&block)
       @value.each(&block)
+    end
+  end
+
+  module PkgConfig
+    def pkgConfig option, pkg
+      require 'open3'
+      o, s = Open3.capture2e('pkg-config', option, pkg)
+      raise MissingPkg.new(pkg) unless s.exitstatus == 0
+      Shellwords.split(o)
     end
   end
 
@@ -259,13 +254,36 @@ module RakeBuilder
     end
 
     def _build_
-      @value
+      RakeBuilder::Build[@value]
     end
   end
 
   class Pkgs
     include ExOnNames
     include ExOnBuild
+
+    class Item
+      include PkgConfig
+
+      def initialize type, name
+        @type = type
+        @name = name
+        @value = nil
+      end
+
+      def _build_
+        @value ||= pkgConfig(@type, @name)
+      end
+
+      def == other
+        _cmp == other._cmp
+      end
+
+    protected
+      def _cmp
+        [ @type, @name ]
+      end
+    end
 
     def initialize(pkgs, flags:, libs:)
       @flags = flags
@@ -280,9 +298,10 @@ module RakeBuilder
         if pkg.kind_of? Pkgs
           self << pkg.value
         else
-          @flags << pkgConfig('--cflags', pkg)
-          @libs << pkgConfig('--libs', pkg)
+          @flags << Pkgs::Item.new('--cflags', pkg)
+          @libs << Pkgs::Item.new('--libs', pkg)
           @value << pkg
+          @value = @value.flatten.uniq
         end
       }
 
@@ -290,16 +309,7 @@ module RakeBuilder
     end
 
     def value
-      @value.flatten.uniq
       @value
-    end
-
-  private
-    def pkgConfig option, pkg
-      require 'open3'
-      o, s = Open3.capture2e('pkg-config', option, pkg)
-      raise MissingPkg.new(pkg) unless s.exitstatus == 0
-      Shellwords.split(o)
     end
   end
 

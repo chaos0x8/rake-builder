@@ -35,8 +35,8 @@ class TestRakeGenerateIncludeDirectory < Test::Unit::TestCase
       GeneratedFile.expects(:new).yields(@gf).returns(@gf)
       @gf.expects(:name=).with('path/directory.hpp')
       @gf.expects(:code=)
-      @gf.expects(:requirements).returns(@req)
-      @req.expects(:<<)
+      @gf.expects(:requirements).returns(@req).at_least(1)
+      @req.expects(:<<).at_least(1)
 
       assert_equal(@gf, Generate::includeDirectory('path/directory'))
     }

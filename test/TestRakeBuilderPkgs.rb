@@ -25,31 +25,40 @@ require 'shoulda'
 require_relative '../lib/RakeBuilder'
 
 class TestPkgs < Test::Unit::TestCase
+  def capture_pkg *args
+    require 'open3'
+    out, st = Open3.capture2e('pkg-config', *args)
+    out if st.exitstatus == 0
+    Shellwords.split(out)
+  end
+
   def self.shouldReturn
     proc {
       should('returns flags') {
-        assert_equal(Shellwords.split(`pkg-config --cflags ruby`), @flags.flatten)
+        assert_equal(capture_pkg('--cflags', 'ruby'), RakeBuilder::Build[@flags])
       }
 
       should('returns libs') {
-        assert_equal(Shellwords.split(`pkg-config --libs ruby`), @libs.flatten)
+        assert_equal(capture_pkg('--libs', 'ruby'), RakeBuilder::Build[@libs])
       }
     }
   end
 
   context('TestPkgs') {
     setup {
-      @flags = Array.new
-      @libs = Array.new
+      @flags = RakeBuilder::Flags.new([])
+      @libs = RakeBuilder::Libs.new([])
     }
 
     should('raises when pkg doesn\'t exists') {
-      assert_raise(RakeBuilder::MissingPkg) {
-        RakeBuilder::Pkgs.new('rubyfsdfsdf', flags: @flags, libs: @libs)
-      }
+      RakeBuilder::Pkgs.new('rubyfsdfsdf', flags: @flags, libs: @libs)
 
-      assert_equal([], @flags)
-      assert_equal([], @libs)
+      assert_raise(RakeBuilder::MissingPkg) {
+        assert_equal([], RakeBuilder::Build[@flags])
+      }
+      assert_raise(RakeBuilder::MissingPkg) {
+        assert_equal([], RakeBuilder::Build[@libs])
+      }
     }
 
     context('created from existing pkg') {
