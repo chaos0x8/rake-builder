@@ -61,7 +61,7 @@ class TestGeneratedFile < Test::Unit::TestCase
         t.expects(:file).at_least(0)
       }
 
-      assert_equal(['path/main.cpp'], RakeBuilder::Names[gen])
+      assert_equal(['path/main.cpp'], Names[gen])
     }
   }
 end

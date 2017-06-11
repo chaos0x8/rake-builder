@@ -49,7 +49,7 @@ class TestDirectory < Test::Unit::TestCase
         t.expects(:directory).at_least(0)
       }
 
-      assert_equal(['path-3'], RakeBuilder::Names[dir])
+      assert_equal(['path-3'], Names[dir])
     }
 
     should('be converted by Names to empty when is eq to current directory') {
@@ -57,7 +57,7 @@ class TestDirectory < Test::Unit::TestCase
         t.expects(:directory).at_least(0)
       }
 
-      assert_equal([], RakeBuilder::Names[dir])
+      assert_equal([], Names[dir])
     }
   }
 end

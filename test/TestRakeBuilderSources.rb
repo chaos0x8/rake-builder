@@ -32,8 +32,8 @@ class TestSources < Test::Unit::TestCase
       @sources.each { |src|
         stub = SourceFileStub.new(name: src)
         stub.expects(:kind_of?).returns(false).at_least(0)
-        stub.expects(:kind_of?).with(SourceFile).returns(true).at_least(0)
-        SourceFile.expects(:new).with { |name:, **opts| name == src }.returns(stub).at_least(0)
+        stub.expects(:kind_of?).with(RakeBuilder::SourceFile).returns(true).at_least(0)
+        RakeBuilder::SourceFile.expects(:new).with { |name:, **opts| name == src }.returns(stub).at_least(0)
       }
 
       @opts = { flags: [], includes: [], requirements: [] }
@@ -45,7 +45,7 @@ class TestSources < Test::Unit::TestCase
       result = sut - [ 'source2' ]
 
       assert(result.class == Array)
-      assert_equal(['source1', 'source3'].sort, RakeBuilder::Names[result].sort)
+      assert_equal(['source1', 'source3'].sort, Names[result].sort)
     }
 
     should('create sources from other sources') {
@@ -54,7 +54,7 @@ class TestSources < Test::Unit::TestCase
 
       sut << other
 
-      assert_equal(['source1', 'source2', 'source3'].sort, RakeBuilder::Names[sut].sort)
+      assert_equal(['source1', 'source2', 'source3'].sort, Names[sut].sort)
     }
   }
 end

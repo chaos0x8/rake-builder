@@ -35,11 +35,11 @@ class TestPkgs < Test::Unit::TestCase
   def self.shouldReturn
     proc {
       should('returns flags') {
-        assert_equal(capture_pkg('--cflags', 'ruby'), RakeBuilder::Build[@flags])
+        assert_equal(capture_pkg('--cflags', 'ruby'), Build[@flags])
       }
 
       should('returns libs') {
-        assert_equal(capture_pkg('--libs', 'ruby'), RakeBuilder::Build[@libs])
+        assert_equal(capture_pkg('--libs', 'ruby'), Build[@libs])
       }
     }
   end
@@ -54,10 +54,10 @@ class TestPkgs < Test::Unit::TestCase
       RakeBuilder::Pkgs.new('rubyfsdfsdf', flags: @flags, libs: @libs)
 
       assert_raise(RakeBuilder::MissingPkg) {
-        assert_equal([], RakeBuilder::Build[@flags])
+        assert_equal([], Build[@flags])
       }
       assert_raise(RakeBuilder::MissingPkg) {
-        assert_equal([], RakeBuilder::Build[@libs])
+        assert_equal([], Build[@libs])
       }
     }
 

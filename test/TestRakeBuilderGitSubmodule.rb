@@ -71,7 +71,7 @@ class TestGitSubmodule < Test::Unit::TestCase
       git = GitSubmodule.new(name: 'cppCommon', libs: ['lib/libcommon.a', 'lib/libfoo.a']) { |t|
         t.expects(:file).at_least(0)
       }
-      assert_equal(['cppCommon/lib/libcommon.a', 'cppCommon/lib/libfoo.a'], RakeBuilder::Names[git])
+      assert_equal(['cppCommon/lib/libcommon.a', 'cppCommon/lib/libfoo.a'], Names[git])
     }
 
     should('create file rules') {

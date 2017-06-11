@@ -29,6 +29,9 @@ task(:default => :test)
 
 desc "builds gem file"
 task(:gem => 'rake-builder.gemspec') {
-    sh 'gem build rake-builder.gemspec'
+  sh 'gem build rake-builder.gemspec'
+  Dir['*.gem'].sort{ |a, b| File.mtime(a) <=> File.mtime(b) }[0..-2].each { |fn|
+    FileUtils.rm(fn, verbose: true)
+  }
 }
 

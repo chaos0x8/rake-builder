@@ -28,7 +28,7 @@ class TestTarget < Test::Unit::TestCase
   def sourceFileMock
     result = mock()
     result.expects(:kind_of?).returns(false).at_least(0)
-    result.expects(:kind_of?).with(SourceFile).returns(true).at_least(0)
+    result.expects(:kind_of?).with(RakeBuilder::SourceFile).returns(true).at_least(0)
     result
   end
 
@@ -47,7 +47,7 @@ class TestTarget < Test::Unit::TestCase
       }
 
       should('not create source rule when existing source is given') {
-        SourceFile.expects(:new).at_most(0)
+        RakeBuilder::SourceFile.expects(:new).at_most(0)
 
         _class_.new(name: 'name') { |t|
           t.sources << sourceFileMock
@@ -61,15 +61,15 @@ class TestTarget < Test::Unit::TestCase
         }
 
         should('create source rules using constructor') {
-          SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
-          SourceFile.expects(:new).with { |x| x[:name] ==  'library.cpp' }.returns(sourceFileMock)
+          RakeBuilder::SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
+          RakeBuilder::SourceFile.expects(:new).with { |x| x[:name] ==  'library.cpp' }.returns(sourceFileMock)
 
           _class_.new(name: 'name', sources: @sources)
         }
 
         should('create source rules using yielded self') {
-          SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
-          SourceFile.expects(:new).with { |x| x[:name] == 'library.cpp'}.returns(sourceFileMock)
+          RakeBuilder::SourceFile.expects(:new).with { |x| x[:name] == 'main.cpp' }.returns(sourceFileMock)
+          RakeBuilder::SourceFile.expects(:new).with { |x| x[:name] == 'library.cpp'}.returns(sourceFileMock)
 
           _class_.new(name: 'name') { |t|
             t.sources << @sources
@@ -83,7 +83,7 @@ class TestTarget < Test::Unit::TestCase
             t.sources << @sources
           }
 
-          assert_equal(['name', '.obj/main.o', '.obj/library.o'], RakeBuilder::Names[sut])
+          assert_equal(['name', '.obj/main.o', '.obj/library.o'], Names[sut])
         }
 
         should('be convertable to names with other Target') {
@@ -93,7 +93,7 @@ class TestTarget < Test::Unit::TestCase
 
           sut = _class_.new(name: 'name', sources: 'main.cpp', libs: [ lib, '-lpthread' ])
 
-          assert_equal(['name', '.obj/main.o', 'libname.a', '.obj/hello.o'], RakeBuilder::Names[sut])
+          assert_equal(['name', '.obj/main.o', 'libname.a', '.obj/hello.o'], Names[sut])
         } if _class_ != Library
 
         should('be convertable to build') {
@@ -101,7 +101,7 @@ class TestTarget < Test::Unit::TestCase
             t.sources << 'hello.cpp'
           }
 
-          assert_equal(['name'], RakeBuilder::Build[sut])
+          assert_equal(['name'], Build[sut])
         } if _class_ != Executable
 
         should('create exec rule') {
@@ -114,9 +114,9 @@ class TestTarget < Test::Unit::TestCase
         }
 
         should('create rules with requirements') {
-          SourceFile.expects(:new).with { |x|
+          RakeBuilder::SourceFile.expects(:new).with { |x|
             x[:name] == 'main.cpp' and
-            RakeBuilder::Names[x[:requirements]] == ['hello.hpp']
+            Names[x[:requirements]] == ['hello.hpp']
           }.returns('.obj/main.o')
 
           _class_.new(name: 'name', requirements: 'hello.hpp') { |t|
@@ -133,7 +133,7 @@ class TestTarget < Test::Unit::TestCase
             t.sources << @sources
             t.flags << [ '-pthread', '-DNDEBUG', '-pthread', '--std=c++11' ]
 
-            assert_equal(['-pthread', '-DNDEBUG', '--std=c++11'].sort, RakeBuilder::Build[t.flags].sort)
+            assert_equal(['-pthread', '-DNDEBUG', '--std=c++11'].sort, Build[t.flags].sort)
           }
         }
 
@@ -145,7 +145,7 @@ class TestTarget < Test::Unit::TestCase
             t.flags << [ '--std=c++11', '--std=c++14' ]
             t.flags << [ '-std=c++11', '-std=c++14' ]
 
-            assert_equal(['--std=c++14'], RakeBuilder::Build[t.flags])
+            assert_equal(['--std=c++14'], Build[t.flags])
           }
         }
 
@@ -169,7 +169,7 @@ class TestTarget < Test::Unit::TestCase
               t.sources << @sources
               t.pkgs << 'ruby'
 
-              assert_equal(['flag'], RakeBuilder::Build[t.flags])
+              assert_equal(['flag'], Build[t.flags])
             }
           }
 
@@ -184,7 +184,7 @@ class TestTarget < Test::Unit::TestCase
               t.sources << @sources
               t.pkgs << 'ruby'
 
-              assert_equal(['lib'], RakeBuilder::Build[t.libs])
+              assert_equal(['lib'], Build[t.libs])
             }
           }
         }

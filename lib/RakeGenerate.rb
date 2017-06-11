@@ -19,7 +19,7 @@
 require_relative 'RakeBuilder'
 
 module Generate
-  def self.includeDirectory(dirName, requirements: [])
+  def includeDirectory(dirName, requirements: [])
     GeneratedFile.new { |t|
       t.name = "#{dirName}.hpp"
       t.requirements << requirements
@@ -37,5 +37,7 @@ module Generate
       }
     }
   end
+
+  module_function :includeDirectory
 end
 

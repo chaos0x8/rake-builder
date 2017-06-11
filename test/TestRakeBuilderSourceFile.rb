@@ -36,7 +36,7 @@ class TestSourceFile < Test::Unit::TestCase
 
     should('raise when name is not provided') {
       assert_raise(RakeBuilder::MissingAttribute) {
-        SourceFile.new(
+        RakeBuilder::SourceFile.new(
           flags: [ '--std=c++11' ],
           includes: [ 'Source' ]
         )
@@ -44,7 +44,7 @@ class TestSourceFile < Test::Unit::TestCase
     }
 
     should('create build rule') {
-      SourceFile.new { |t|
+      RakeBuilder::SourceFile.new { |t|
         t.name = 'main.cpp'
 
         t.expects(:file).with { |x| x.keys.first == to_mf(t.name) }.in_sequence(@seq)
@@ -53,7 +53,7 @@ class TestSourceFile < Test::Unit::TestCase
     }
 
     should('read dependencies before creating rules') {
-      SourceFile.new { |t|
+      RakeBuilder::SourceFile.new { |t|
         t.name = 'main.cpp'
 
         File.expects(:exist?).with(to_mf(t.name)).returns(true).at_least(0)
@@ -65,7 +65,7 @@ class TestSourceFile < Test::Unit::TestCase
     }
 
     should('include dependency to .obj directory') {
-      SourceFile.new { |t|
+      RakeBuilder::SourceFile.new { |t|
         t.name = 'main.cpp'
 
         t.expects(:file).with { |x| x.values.first.include?('.obj') }.in_sequence(@seq)
@@ -74,7 +74,7 @@ class TestSourceFile < Test::Unit::TestCase
     }
 
     should('describe rule') {
-      SourceFile.new { |t|
+      RakeBuilder::SourceFile.new { |t|
         t.name = 'main.cpp'
         t.description = 'desc'
 
@@ -85,13 +85,13 @@ class TestSourceFile < Test::Unit::TestCase
     }
 
     should('be converted by Names') {
-      source = SourceFile.new { |t|
+      source = RakeBuilder::SourceFile.new { |t|
         t.name = 'main.cpp'
 
         t.expects(:file).at_least(0)
       }
 
-      assert_equal([to_obj('main.cpp')], RakeBuilder::Names[source])
+      assert_equal([to_obj('main.cpp')], Names[source])
     }
   }
 end

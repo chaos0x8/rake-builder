@@ -41,7 +41,7 @@ main = Executable.new { |t|
     t.description = 'Build testable application'
 }
 
-multitask(default: RakeBuilder::Names[main])
+multitask(default: Names[main])
 
 task(:clean) {
   sh "rm -rf bin" if File.directory?('bin')

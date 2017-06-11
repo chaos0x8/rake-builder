@@ -123,39 +123,9 @@ module RakeBuilder
     end
   end
 
-  class Names
-    def self.[](*args)
-      args.collect { |a|
-        if a.kind_of? Array
-          Names[*a]
-        elsif a.respond_to? :_names_
-          Names[a._names_]
-        else
-          a.to_s
-        end
-      }.flatten
-    end
-  end
-
-  class Build
-    def self.[](*args)
-      args.collect { |a|
-        if a.kind_of? Array
-          Build[*a]
-        elsif a.respond_to? :_build_
-          Build[a._build_]
-        elsif a.respond_to? :_names_
-          Names[a._names_]
-        else
-          a.to_s
-        end
-      }.flatten
-    end
-  end
-
   class Flags < ArrayWrapper
     def _build_
-      build = RakeBuilder::Build[@value]
+      build = Build[@value]
 
       flags = []
       stdFlags = []
@@ -254,7 +224,7 @@ module RakeBuilder
     end
 
     def _build_
-      RakeBuilder::Build[@value]
+      Build[@value]
     end
   end
 
@@ -320,37 +290,97 @@ module RakeBuilder
       @value
     end
   end
+
+  class SourceFile
+    include RakeBuilder::Utility
+    include RakeBuilder::Transform
+    include Rake::DSL
+
+    attr_accessor :name, :flags, :includes, :description
+
+    def initialize(name: nil, flags: [], includes: [], requirements: [], description: nil)
+      @name = name
+      @flags = flags
+      @includes = includes
+      @description = description
+      @requirements = Names[requirements]
+
+      yield(self) if block_given?
+
+      required(:name)
+
+      dir = Names[Directory.new(name: to_obj(@name))]
+      file(to_mf(@name) => [ dir, @requirements, readMf(to_mf(@name)), @name ].flatten) {
+        sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
+      }
+
+      desc @description if @description
+      file(to_obj(@name) => [ dir, @requirements, to_mf(@name), @name ].flatten) {
+        sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
+      }
+    end
+
+    def _names_
+      to_obj(@name)
+    end
+  end
+
+  class Target
+    include RakeBuilder::Utility
+    include RakeBuilder::Transform
+    include Rake::DSL
+
+    attr_accessor :name, :description
+    attr_reader :flags, :includes, :sources, :libs, :pkgs, :requirements
+
+    def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
+      @name = name
+      @flags = RakeBuilder::Flags.new(flags)
+      @libs = RakeBuilder::Libs.new(libs)
+      @pkgs = RakeBuilder::Pkgs.new(pkgs, flags: @flags, libs: @libs)
+      @includes = RakeBuilder::Includes.new(includes)
+      @requirements = RakeBuilder::Requirements.new(requirements)
+      @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes, requirements: @requirements)
+      @description = description
+
+      yield(self) if block_given?
+
+      required(:name, :sources)
+    end
+
+    def _names_
+      [ @name, @sources ]
+    end
+  end
 end
 
-module RakeBuilder
-  module Detail
-    class Target
-      include RakeBuilder::Utility
-      include RakeBuilder::Transform
-      include Rake::DSL
-
-      attr_accessor :name, :description
-      attr_reader :flags, :includes, :sources, :libs, :pkgs, :requirements
-
-      def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
-        @name = name
-        @flags = RakeBuilder::Flags.new(flags)
-        @libs = RakeBuilder::Libs.new(libs)
-        @pkgs = RakeBuilder::Pkgs.new(pkgs, flags: @flags, libs: @libs)
-        @includes = RakeBuilder::Includes.new(includes)
-        @requirements = RakeBuilder::Requirements.new(requirements)
-        @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes, requirements: @requirements)
-        @description = description
-
-        yield(self) if block_given?
-
-        required(:name, :sources)
+class Names
+  def self.[](*args)
+    args.collect { |a|
+      if a.kind_of? Array
+        Names[*a]
+      elsif a.respond_to? :_names_
+        Names[a._names_]
+      else
+        a.to_s
       end
+    }.flatten
+  end
+end
 
-      def _names_
-        [ @name, @sources ]
+class Build
+  def self.[](*args)
+    args.collect { |a|
+      if a.kind_of? Array
+        Build[*a]
+      elsif a.respond_to? :_build_
+        Build[a._build_]
+      elsif a.respond_to? :_names_
+        Names[a._names_]
+      else
+        a.to_s
       end
-    end
+    }.flatten
   end
 end
 
@@ -377,40 +407,6 @@ class Directory
   end
 end
 
-class SourceFile
-  include RakeBuilder::Utility
-  include RakeBuilder::Transform
-  include Rake::DSL
-
-  attr_accessor :name, :flags, :includes, :description
-
-  def initialize(name: nil, flags: [], includes: [], requirements: [], description: nil)
-    @name = name
-    @flags = flags
-    @includes = includes
-    @description = description
-    @requirements = RakeBuilder::Names[requirements]
-
-    yield(self) if block_given?
-
-    required(:name)
-
-    dir = RakeBuilder::Names[Directory.new(name: to_obj(@name))]
-    file(to_mf(@name) => [ dir, @requirements, readMf(to_mf(@name)), @name ].flatten) {
-      sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
-    }
-
-    desc @description if @description
-    file(to_obj(@name) => [ dir, @requirements, to_mf(@name), @name ].flatten) {
-      sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
-    }
-  end
-
-  def _names_
-    to_obj(@name)
-  end
-end
-
 class GeneratedFile
   include RakeBuilder::Utility
   include RakeBuilder::Transform
@@ -428,9 +424,9 @@ class GeneratedFile
 
     required(:name, :code)
 
-    dir = RakeBuilder::Names[Directory.new(name: @name)]
+    dir = Names[Directory.new(name: @name)]
     desc @description if @description
-    file(@name => RakeBuilder::Names[dir, @requirements]) {
+    file(@name => Names[dir, @requirements]) {
       @code.call(@name)
     }
   end
@@ -474,13 +470,13 @@ class GitSubmodule
   end
 end
 
-class Executable < RakeBuilder::Detail::Target
+class Executable < RakeBuilder::Target
   def initialize(*args, **opts)
     super(*args, **opts)
 
-    dir = RakeBuilder::Names[Directory.new(name: @name)]
+    dir = Names[Directory.new(name: @name)]
     desc @description if @description
-    file(@name => RakeBuilder::Names[dir, @requirements, @sources, @libs]) {
+    file(@name => Names[dir, @requirements, @sources, @libs]) {
       sh "g++ #{_build_join_(@flags)} #{_build_join_(@sources)} -o #{@name} #{_build_join_(@libs)}".squeeze(' ')
     }
   end
@@ -490,19 +486,32 @@ class Executable < RakeBuilder::Detail::Target
   end
 end
 
-class Library < RakeBuilder::Detail::Target
+class Library < RakeBuilder::Target
   def initialize(*args, **opts)
     super(*args, **opts)
 
-    dir = RakeBuilder::Names[Directory.new(name: @name)]
+    dir = Names[Directory.new(name: @name)]
     desc @description if @description
-    file(@name => RakeBuilder::Names[dir, @requirements, @sources]) {
+    file(@name => Names[dir, @requirements, @sources]) {
       sh "ar vsr #{@name} #{_build_join_(@sources)}"
     }
   end
 
   def _build_
-    RakeBuilder::Build[@name]
+    Build[@name]
   end
+end
+
+def mkSources sources, flags: [], includes: [], pkgs: [], requirements: []
+  flags = RakeBuilder::Flags.new(flags)
+  libs = RakeBuilder::Libs.new([])
+  pkgs = RakeBuilder::Pkgs.new(pkgs, flags: flags, libs: libs)
+  includes = RakeBuilder::Includes.new(includes)
+
+  RakeBuilder::Sources.new(
+    sources,
+    flags: flags,
+    includes: includes,
+    requirements: requirements)
 end
 

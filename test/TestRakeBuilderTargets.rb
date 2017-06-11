@@ -29,15 +29,15 @@ class TestTargets < Test::Unit::TestCase
   context('TestTargets') {
     setup {
       @sources = [ 'main.cpp' ]
-      SourceFile.expects(:new).at_least(0)
+      RakeBuilder::SourceFile.expects(:new).at_least(0)
     }
 
     [
       [ symbol: :includes,  input: [['inc1'], ['inc2']], output: [ '-Iinc1', '-Iinc2' ] ],
       [ symbol: :flags,  input: [['flag1', '-std=c++11'], ['flag2', '--std=c++14']], output: [ 'flag1', 'flag2', '--std=c++14' ] ],
       [ symbol: :libs,  input: [['lib1'], ['lib2']], output: [ 'lib1', 'lib2' ] ],
-      [ symbol: :requirements,  input: [['req1'], ['req2']], output: [ 'req1', 'req2' ], collect: RakeBuilder::Names ]
-    ].each { |symbol:, input:, output:, collect: RakeBuilder::Build|
+      [ symbol: :requirements,  input: [['req1'], ['req2']], output: [ 'req1', 'req2' ], collect: Names ]
+    ].each { |symbol:, input:, output:, collect: Build|
       should("be able to use #{symbol} from other target") {
         target1 = Executable.new(name: 'target1') { |t|
           t.expects(:file).at_least(0)
@@ -66,8 +66,8 @@ class TestTargets < Test::Unit::TestCase
       (@sources1+@sources2).each { |src|
         stub = SourceFileStub.new(name: src)
         stub.expects(:kind_of?).returns(false).at_least(0)
-        stub.expects(:kind_of?).with(SourceFile).returns(true).at_least(0)
-        SourceFile.expects(:new).with { |name:, **opts| name == src }.returns(stub).at_least(0)
+        stub.expects(:kind_of?).with(RakeBuilder::SourceFile).returns(true).at_least(0)
+        RakeBuilder::SourceFile.expects(:new).with { |name:, **opts| name == src }.returns(stub).at_least(0)
       }
     }
 
@@ -84,7 +84,7 @@ class TestTargets < Test::Unit::TestCase
         t.sources << target1.sources - ['source1-b'] << @sources2
       }
 
-      assert_equal(['source1-a', 'source1-c', 'source2'].sort, RakeBuilder::Names[target2.sources].sort)
+      assert_equal(['source1-a', 'source1-c', 'source2'].sort, Names[target2.sources].sort)
     }
   }
 end
