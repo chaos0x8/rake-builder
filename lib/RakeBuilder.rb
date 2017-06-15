@@ -311,12 +311,12 @@ module RakeBuilder
 
       dir = Names[Directory.new(name: to_obj(@name))]
       file(to_mf(@name) => [ dir, @requirements, readMf(to_mf(@name)), @name ].flatten) {
-        sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
+        sh "#{RakeBuilder::gpp} #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -M -MM -MF #{to_mf(@name)}".squeeze(' ')
       }
 
       desc @description if @description
       file(to_obj(@name) => [ dir, @requirements, to_mf(@name), @name ].flatten) {
-        sh "g++ #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
+        sh "#{RakeBuilder::gpp} #{_build_join_(@flags)} #{_build_join_(@includes)} -c #{@name} -o #{to_obj(@name)}".squeeze(' ')
       }
     end
 
@@ -351,6 +351,25 @@ module RakeBuilder
     def _names_
       [ @name, @sources ]
     end
+  end
+
+  @@gpp = 'g++'
+  @@ar = 'ar'
+
+  def self.gpp
+    @@gpp
+  end
+
+  def self.gpp= value
+    @@gpp = value
+  end
+
+  def self.ar
+    @@ar
+  end
+
+  def self.ar= value
+    @@ar = value
   end
 end
 
@@ -477,7 +496,7 @@ class Executable < RakeBuilder::Target
     dir = Names[Directory.new(name: @name)]
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources, @libs]) {
-      sh "g++ #{_build_join_(@flags)} #{_build_join_(@sources)} -o #{@name} #{_build_join_(@libs)}".squeeze(' ')
+      sh "#{RakeBuilder::gpp} #{_build_join_(@flags)} #{_build_join_(@sources)} -o #{@name} #{_build_join_(@libs)}".squeeze(' ')
     }
   end
 
@@ -493,7 +512,7 @@ class Library < RakeBuilder::Target
     dir = Names[Directory.new(name: @name)]
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources]) {
-      sh "ar vsr #{@name} #{_build_join_(@sources)}"
+      sh "#{RakeBuilder::ar} vsr #{@name} #{_build_join_(@sources)}"
     }
   end
 
