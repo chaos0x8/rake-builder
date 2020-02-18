@@ -2,7 +2,7 @@
 
 # \author <https://github.com/chaos0x8>
 # \copyright
-# Copyright (c) 2016, <https://github.com/chaos0x8>
+# Copyright (c) 2017, <https://github.com/chaos0x8>
 #
 # \copyright
 # Permission to use, copy, modify, and/or distribute this software for any
@@ -18,14 +18,21 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-def web_require url
-  resultFile = "#{File.dirname(__FILE__)}/#{File.basename(url)}"
-  system 'wget', url, '-O', resultFile if not File.exist?(resultFile) or File.size(resultFile) == 0
-  require resultFile
+require 'test/unit'
+require 'mocha/setup'
+require 'shoulda'
+
+require_relative '../lib/rake-builder'
+
+class TestRequire < Test::Unit::TestCase
+  context('TestRequire') {
+    [ 'Executable', 'Library', 'Generate' ].each { |cls|
+      should("should respond to #{cls}") {
+        assert(Object.const_defined?(cls))
+      }
+    }
+  }
 end
 
-def web_eval url
-  require 'open3'
-  eval(Open3.capture2('wget', url, '-O', '-', err: '/dev/null').first)
-end
+
 

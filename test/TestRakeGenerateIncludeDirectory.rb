@@ -22,7 +22,7 @@ require 'test/unit'
 require 'mocha/setup'
 require 'shoulda'
 
-require_relative '../lib/RakeGenerate'
+require_relative '../lib/rake-builder/RakeGenerate'
 
 class TestRakeGenerateIncludeDirectory < Test::Unit::TestCase
   context('TestRakeGenerateIncludeDirectory') {
