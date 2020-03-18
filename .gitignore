@@ -6,8 +6,8 @@
 *.mf
 *.gem
 
-example/bin/*
-example/obj/*
-example/lib/*
+examples/**/bin/*
+examples/**/.obj/*
+examples/**/lib/*
 
 tags

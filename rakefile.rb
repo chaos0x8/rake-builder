@@ -20,8 +20,18 @@
 
 require 'rake/testtask'
 
-Rake::TestTask.new(:test) { |t|
-    t.pattern = "#{File.dirname(__FILE__)}/test/Test*.rb"
+require_relative 'lib/rake-builder'
+
+rubyDev = InstallPkg.new(name: :rubyDev) { |t|
+  t.pkgs << 'ruby-dev'
+}
+
+task(:installPkg) {
+  require_pkg 'ruby-dev'
+}
+
+Rake::TestTask.new(test: Names[rubyDev]) { |t|
+  t.pattern = "#{File.dirname(__FILE__)}/test/Test*.rb"
 }
 
 desc "#{File.basename(File.dirname(__FILE__))}"

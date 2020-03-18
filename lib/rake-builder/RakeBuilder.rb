@@ -18,6 +18,8 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+autoload :Open3, 'open3'
+
 require 'shellwords'
 require 'rake'
 
@@ -44,14 +46,20 @@ module RakeBuilder
     end
 
     def << item
-      if item.kind_of? ArrayWrapper
-        self << item.value
-      else
-        @value << item
-        @value = @value.flatten.uniq
+      unless item.nil?
+        if item.kind_of? ArrayWrapper
+          self << item.value
+        else
+          @value << item
+          @value = @value.flatten.uniq
+        end
       end
 
       self
+    end
+
+    def empty?
+      @value.empty?
     end
 
   protected
@@ -101,6 +109,12 @@ module RakeBuilder
   class MissingPkg < RuntimeError
     def initialize pkg
       super("Missing pkg '#{pkg}'")
+    end
+  end
+
+  class PkgsInstalationError < RuntimeError
+    def initialize pkgs
+      super("Failed to install pkgs #{pkgs.collect { |x| "'#{x}'" }.join(', ')}")
     end
   end
 
@@ -159,7 +173,6 @@ module RakeBuilder
 
   module PkgConfig
     def pkgConfig option, pkg
-      require 'open3'
       o, s = Open3.capture2e('pkg-config', option, pkg)
       raise MissingPkg.new(pkg) unless s.exitstatus == 0
       Shellwords.split(o)
@@ -183,7 +196,7 @@ module RakeBuilder
     end
 
     def << sources
-      [ sources ].flatten.each { |src|
+      [ sources ].flatten.uniq.each { |src|
         if src.kind_of? Sources
           self << src.value
         elsif src.kind_of? SourceFile
