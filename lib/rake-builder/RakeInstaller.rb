@@ -19,22 +19,34 @@ module RakeBuilder
     include VIterable
   end
 
+  @@install_mutext = Mutex.new
+
+  def install_lock &block
+    @@install_mutext.synchronize {
+      block.call
+    }
+  end
+
   def isPkgInstalled? pkg
-    pid, st = Process.wait2(Process.spawn('dpkg', '-s', pkg, [:out, :err] => '/dev/null'))
-    st.exitstatus == 0
+    install_lock {
+      pid, st = Process.wait2(Process.spawn('dpkg', '-s', pkg, [:out, :err] => '/dev/null'))
+      st.exitstatus == 0
+    }
   end
 
   def installPkgs *pkgs, verbose: false
-    if pkgs.size > 0
-      $stdout.puts "Required pkg #{pkgs.collect { |x| "'#{x}'" }.join(', ')} are missing. Installing missing pkgs..."
-      pid, st = Process.wait2(Process.spawn('sudo', 'apt', 'install', '-y', *pkgs))
-      raise PkgsInstalationError.new(pkgs) unless st.exitstatus == 0
-    end
+    install_lock {
+      if pkgs.size > 0
+        $stdout.puts "Required pkg #{pkgs.collect { |x| "'#{x}'" }.join(', ')} are missing. Installing missing pkgs..."
+        pid, st = Process.wait2(Process.spawn('sudo', 'apt', 'install', '-y', *pkgs))
+        raise PkgsInstalationError.new(pkgs) unless st.exitstatus == 0
+      end
+    }
 
     nil
   end
 
-  module_function :isPkgInstalled?, :installPkgs
+  module_function :install_lock, :isPkgInstalled?, :installPkgs
 end
 
 def require_pkg pkg
