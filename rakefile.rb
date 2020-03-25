@@ -52,7 +52,7 @@ task(:gem => 'rake-builder.gemspec') {
     t.code = proc {
       content = t.requirements.collect { |fn|
         "require_relative '#{name}/#{File.basename(fn)}'"
-      }.join("\n")
+      }.sort.join("\n")
 
       IO.write(t.name, content)
     }
@@ -78,7 +78,7 @@ GeneratedFile.new { |t|
     content << ""
     content << Names[t.requirements].collect { |fn|
       "require_relative 'rake-builder/#{File.basename(fn)}'"
-    }
+    }.sort
     content << ""
     content << "require_pkg 'pkg-config'"
 

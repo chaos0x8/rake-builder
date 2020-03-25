@@ -1,3 +1,5 @@
+require_relative 'ArrayWrapper/ArrayWrapper'
+
 module RakeBuilder
   class Pkgs
     include ExOnNames
