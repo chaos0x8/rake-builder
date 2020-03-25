@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
-require_relative 'RakeBuilder'
+require_relative 'ArrayWrapper'
+require_relative 'Utility'
+require_relative 'Names'
 
 module RakeBuilder
   module Detail

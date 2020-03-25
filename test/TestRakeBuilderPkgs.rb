@@ -22,7 +22,7 @@ require 'test/unit'
 require 'mocha/setup'
 require 'shoulda'
 
-require_relative '../lib/rake-builder/RakeBuilder'
+require_relative '../lib/rake-builder'
 
 class TestPkgs < Test::Unit::TestCase
   def capture_pkg *args
