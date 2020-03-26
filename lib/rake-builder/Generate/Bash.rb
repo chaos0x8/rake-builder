@@ -61,7 +61,7 @@ module Generate
     end
 
     def apt_install pkg
-      if_("dpkg -s #{Shellwords.escape(pkg)} > /dev/null 2> /dev/null") {
+      if_("! dpkg -s #{Shellwords.escape(pkg)} > /dev/null 2> /dev/null") {
         self << "sudo apt install -y #{Shellwords.escape(pkg)}"
       }
     end
@@ -90,6 +90,10 @@ module Generate
 
     def echo txt
       self << "echo #{Shellwords.escape(txt)}"
+    end
+
+    def declated? var
+      "declare -p #{Shellwords.escape(var)} > /dev/null 2> /dev/null"
     end
 
   private
