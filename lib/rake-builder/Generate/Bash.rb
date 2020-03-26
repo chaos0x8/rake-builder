@@ -47,13 +47,49 @@ module Generate
     end
 
     def source_static fn
-      self << "source #{File.expand_path(fn)}"
+      self << "source #{Shellwords.escape(File.expand_path(fn))}"
     end
 
     def source fn
-      if_("[ -f #{File.expand_path(fn)} ]") {
+      if_("[ -f #{Shellwords.escape(File.expand_path(fn))} ]") {
         source_static fn
       }
+    end
+
+    def cd fn
+      self << "cd #{Shellwords.escape(File.expand_path(fn))}"
+    end
+
+    def apt_install pkg
+      if_("dpkg -s #{Shellwords.escape(pkg)} > /dev/null 2> /dev/null") {
+        self << "sudo apt install -y #{Shellwords.escape(pkg)}"
+      }
+    end
+
+    def path fn
+      self << "export PATH=#{Shellwords.escape(File.expand_path(fn))}:$PATH"
+    end
+
+    def variable hash = Hash.new
+      hash.each { |name, val|
+        self << "#{Shellwords.escape(name)}=#{Shellwords.escape(val)}"
+      }
+    end
+
+    def export hash = Hash.new
+      hash.each { |name, val|
+        self << "export #{Shellwords.escape(name)}=#{Shellwords.escape(val)}"
+      }
+    end
+
+    def local hash = Hash.new
+      hash.each { |name, val|
+        self << "local #{Shellwords.escape(name)}=#{Shellwords.escape(val)}"
+      }
+    end
+
+    def echo txt
+      self << "echo #{Shellwords.escape(txt)}"
     end
 
   private
