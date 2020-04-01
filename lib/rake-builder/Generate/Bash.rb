@@ -92,7 +92,7 @@ module Generate
       self << "echo #{Shellwords.escape(txt)}"
     end
 
-    def declated? var
+    def declared? var
       "declare -p #{Shellwords.escape(var)} > /dev/null 2> /dev/null"
     end
 
