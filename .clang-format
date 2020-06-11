@@ -1,0 +1,22 @@
+﻿---
+AlignAfterOpenBracket: DontAlign
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: 'false'
+BinPackArguments: 'true'
+BinPackParameters: 'true'
+ColumnLimit: '80'
+ConstructorInitializerIndentWidth: '2'
+ContinuationIndentWidth: '2'
+IndentWidth: '2'
+IndentWrappedFunctionNames: 'true'
+KeepEmptyLinesAtTheStartOfBlocks: 'false'
+Language: Cpp
+MaxEmptyLinesToKeep: '1'
+NamespaceIndentation: All
+PointerAlignment: Left
+SortIncludes: 'true'
+Standard: Cpp11
+TabWidth: '2'
+UseTab: Never
+
+...

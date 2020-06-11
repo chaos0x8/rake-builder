@@ -17,4 +17,18 @@ module RakeBuilder
   def self.ar= value
     @@ar = value
   end
+
+  module Desc
+    def self.extended cls
+      cls.instance_eval {
+        @description = nil
+      }
+    end
+
+    attr_accessor :description
+
+    def desc= v
+      @description = v
+    end
+  end
 end

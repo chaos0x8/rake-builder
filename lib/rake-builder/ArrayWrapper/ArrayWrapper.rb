@@ -14,6 +14,7 @@ module RakeBuilder
   class ArrayWrapper
     include ExOnNames
     include ExOnBuild
+    include Enumerable
 
     def initialize item
       @value = Array.new
@@ -33,8 +34,8 @@ module RakeBuilder
       self
     end
 
-    def empty?
-      @value.empty?
+    def each &block
+      @value.each(&block)
     end
 
   protected

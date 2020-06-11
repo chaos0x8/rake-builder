@@ -7,9 +7,11 @@ class GeneratedFile
   include RakeBuilder::Transform
   include Rake::DSL
 
-  attr_accessor :name, :code, :description, :requirements
+  attr_accessor :name, :code, :requirements
 
   def initialize(name: nil, code: nil, description: nil, requirements: [])
+    extend RakeBuilder::Desc
+
     @name = name
     @code = code
     @requirements = RakeBuilder::Requirements.new(requirements)

@@ -8,6 +8,8 @@ module RakeBuilder
     attr_reader :flags, :includes, :sources, :libs, :pkgs, :requirements
 
     def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
+      extend RakeBuilder::Desc
+
       @name = name
       @flags = RakeBuilder::Flags.new(flags)
       @libs = RakeBuilder::Libs.new(libs)

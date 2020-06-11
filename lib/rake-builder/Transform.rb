@@ -8,6 +8,10 @@ module RakeBuilder
       chExt(name, '.mf')
     end
 
+    def to_cl name
+      chExt(name, '.cl')
+    end
+
   private
     def chExt(x, ext)
       if x.respond_to?(:collect)
