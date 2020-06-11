@@ -10,6 +10,7 @@ class Library < RakeBuilder::Target
 
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources, cl]) {
+      sh 'rm', @name if File.exist? @name
       sh "#{RakeBuilder::ar} vsr #{@name} #{_build_join_(@sources)}"
     }
   end
