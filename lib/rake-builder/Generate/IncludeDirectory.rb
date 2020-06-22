@@ -17,13 +17,23 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 require_relative '../GeneratedFile'
+require_relative '../Transform'
 
 module Generate
+  extend RakeBuilder::Transform
+
   def includeDirectory(dirName, requirements: [])
     GeneratedFile.new { |t|
       t.name = "#{dirName}.hpp"
+
+      dir = Names[Directory.new(name: t.name)]
+      cl = RakeBuilder::ComponentList.new(
+        name: to_cl(t.name),
+        sources: Dir["#{dirName}/*.h", "#{dirName}/*.hpp"],
+        rebuild: [:missing])
+
       t.requirements << requirements
-      t.requirements << Dir["#{dirName}/*.h", "#{dirName}/*.hpp"]
+      t.requirements << Names[cl]
       t.code = proc {
         $stdout.puts "Generating '#{t.name}'..."
 

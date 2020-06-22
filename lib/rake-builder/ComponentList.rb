@@ -21,26 +21,36 @@ module RakeBuilder
 
     attr_accessor :name, :requirements, :sources
 
-    def initialize(name: nil, sources: [])
+    def initialize(name: nil, sources: [], rebuild: [:change, :missing])
       @name = name
-      @sources = sources.collect(&:name)
+      @sources = Names[sources]
 
       yield(self) if block_given?
 
       required(:name, :sources)
 
-      if ComponentList.read(name) != @sources
+      if rebuild.include?(:missing) and ComponentList.read(name) != @sources
         sh 'rm', name if File.exist?(name)
       end
 
-      dir = Names[Directory.new(name: @name)]
-      file(@name => Names[dir, @sources]) { |t|
+      file(@name => requirements_(rebuild)) { |t|
         IO.write(t.name, @sources.join("\n"))
       }
     end
 
     def _names_
       [@name]
+    end
+
+  private
+    def requirements_ rebuild
+      dir = Names[Directory.new(name: @name)]
+
+      if rebuild.include? :change
+        Names[dir, @sources]
+      else
+        Names[dir]
+      end
     end
   end
 end
