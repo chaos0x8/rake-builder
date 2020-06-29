@@ -34,7 +34,9 @@ class GeneratedFile
           txt = format_(txt)
         end
 
-        IO.write(@name, txt)
+        unless File.exist?(@name) and IO.read(@name) == txt
+          IO.write(@name, txt)
+        end
       end
     }
   end

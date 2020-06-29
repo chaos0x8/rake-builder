@@ -33,6 +33,7 @@ task(:installPkg) {
   require_pkg 'ruby-dev'
 }
 
+desc 'Runs compilation tests'
 task(:test => gemFn) {
   sh 'sudo', 'gem', 'install', '-l', gemFn
 
@@ -44,9 +45,7 @@ task(:test => gemFn) {
   }
 }
 
-desc "#{File.basename(File.dirname(__FILE__))}"
-task(:default => :test)
-
+desc 'Builds gem file'
 file(gemFn => 'rake-builder.gemspec') {
   sh 'gem build rake-builder.gemspec'
   Dir['*.gem'].sort{ |a, b| File.mtime(a) <=> File.mtime(b) }[0..-2].each { |fn|
@@ -54,25 +53,27 @@ file(gemFn => 'rake-builder.gemspec') {
   }
 }
 
-desc "builds gem file"
+desc 'Builds gem file'
+task(:default => gemFn)
+
+desc "Builds gem file"
 task(:gem => gemFn)
 
 ['ArrayWrapper', 'Target', 'Generate'].each { |name|
   GeneratedFile.new { |t|
+    t.desc = 'Generated file including directory'
     t.name = "lib/rake-builder/#{name}.rb"
     t.requirements = Dir["lib/rake-builder/#{name}/*.rb"]
     t.code = proc {
-      content = t.requirements.collect { |fn|
+      t.requirements.collect { |fn|
         "require_relative '#{name}/#{File.basename(fn)}'"
       }.sort.join("\n")
-
-      IO.write(t.name, content)
     }
   }
 }
 
 GeneratedFile.new { |t|
-  t.description = 'Generates file including directory'
+  t.desc = 'Generates file including directory'
   t.name = 'lib/rake-builder.rb'
   t.requirements << FileList['lib/rake-builder/*.rb']
   t.requirements << 'lib/rake-builder/ArrayWrapper.rb'
@@ -93,7 +94,6 @@ GeneratedFile.new { |t|
     }.sort
     content << ""
     content << "require_pkg 'pkg-config'"
-
-    IO.write(t.name, content.flatten.join("\n"))
+    content.flatten.join "\n"
   }
 }

@@ -23,7 +23,7 @@ module Generate
   extend RakeBuilder::Transform
 
   def includeDirectory(dirName, requirements: [])
-    GeneratedFile.new { |t|
+    GeneratedFile.new(format: true) { |t|
       t.name = "#{dirName}.hpp"
 
       dir = Names[Directory.new(name: t.name)]
@@ -38,11 +38,13 @@ module Generate
         $stdout.puts "Generating '#{t.name}'..."
 
         File.open(t.name, 'w') { |f|
-          f.write "#pragma once\n"
-          f.write "\n"
+          d = []
+          d << "#pragma once"
+          d << ""
           Dir["#{dirName}/*.h", "#{dirName}/*.hpp"].each { |req|
-            f.write "#include \"#{File.basename(dirName)}/#{File.basename(req)}\"\n"
+            d << "#include \"#{File.basename(dirName)}/#{File.basename(req)}\""
           }
+          d.join "\n"
         }
       }
     }
