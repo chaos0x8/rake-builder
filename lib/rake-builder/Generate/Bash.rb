@@ -40,6 +40,14 @@ module Generate
       self << "fi"
     end
 
+    def if_else condition, block, else_:
+      self << "if #{condition}; then"
+      indent &block
+      self << "else"
+      indent &else_
+      self << "fi"
+    end
+
     def function name, &block
       self << "#{name}() {"
       indent &block
@@ -94,6 +102,49 @@ module Generate
 
     def declared? var
       "declare -p #{Shellwords.escape(var)} > /dev/null 2> /dev/null"
+    end
+
+    def complete name, comp
+      function("_#{name}") {
+        self << "local cur=\"${COMP_WORDS[COMP_CWORD]}\""
+        if comp.kind_of? Hash
+          self << "local prev=\"${COMP_WORDS[COMP_CWORD-1]}\""
+          self << ""
+          self << "case \"${prev}\" in"
+          indent {
+            comp.each { |key, vals|
+              if vals
+                self << "#{key})"
+                indent {
+                  self << "COMPREPLY=($(compgen -W \"#{vals.join(' ')}\" -- \"${cur}\"))"
+                  self << "return 0"
+                  self << ";;"
+                }
+              end
+            }
+            self << "*)"
+            indent {
+              self << ";;"
+            }
+          }
+          self << "esac"
+          self << ""
+          self << "COMPREPLY=($(compgen -W \"#{comp.keys.join(' ')}\" -- \"${cur}\"))"
+        elsif comp.size > 1
+          self << ""
+          self << "COMPREPLY=($(compgen -W \"#{comp.join(' ')}\" -- \"${cur}\"))"
+        else
+          self << ""
+          if_("[ $COMP_CWORD -eq 1 ]") {
+            self << "COMPREPLY=($(compgen -W \"#{comp.join(' ')}\" -- \"${cur}\"))"
+            self << "return 0"
+          }
+          self << ""
+          self << "COMPREPLY=()"
+        end
+      }
+      self << ""
+      self << "complete -F _#{name} #{name}"
     end
 
   private

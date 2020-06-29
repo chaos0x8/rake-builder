@@ -33,8 +33,14 @@ task(:installPkg) {
   require_pkg 'ruby-dev'
 }
 
+desc 'Runs unit tests'
+task(:ut) {
+  args = Dir['test/Test*.rb'].collect { |fn| ['-e', "require '#{File.expand_path(fn)}'"] }
+  sh 'ruby', *args.flatten
+}
+
 desc 'Runs compilation tests'
-task(:test => gemFn) {
+task(:test => [gemFn, :ut]) {
   sh 'sudo', 'gem', 'install', '-l', gemFn
 
   Dir['examples/*'].each { |dir|
