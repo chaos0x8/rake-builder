@@ -27,7 +27,7 @@ module RakeBuilder
 
       yield(self) if block_given?
 
-      required(:name, :sources)
+      required(:name)
 
       if rebuild.include?(:missing) and ComponentList.read(name) != @sources
         sh 'rm', name if File.exist?(name)
