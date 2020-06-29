@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-gem 'rake-builder', '~> 1.0', '>= 1.0.2'
+gem 'rake-builder', '~> 2.0', '>= 2.0.0'
 
 autoload :FileUtils, 'fileutils'
 
@@ -10,3 +10,9 @@ generated = []
 generated << Generate.includeDirectory('Source/Common')
 
 multitask(default: Names[generated])
+
+task(:clean) {
+  generated.each { |t|
+    FileUtils.rm t.name, verbose: true if File.exist?(t.name)
+  }
+}
