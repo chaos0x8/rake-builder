@@ -5,6 +5,12 @@ module RakeBuilder
     end
   end
 
+  class AttributeAltError < RuntimeError
+    def initialize *attributes
+      super("One of the: #{attributes.join(', ')} must be present")
+    end
+  end
+
   class MissingPkg < RuntimeError
     def initialize pkg
       super("Missing pkg '#{pkg}'")

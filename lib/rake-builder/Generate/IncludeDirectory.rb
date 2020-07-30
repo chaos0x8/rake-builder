@@ -16,7 +16,7 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-require_relative '../GeneratedFile'
+require_relative '../Target/GeneratedFile'
 require_relative '../Transform'
 
 module Generate
