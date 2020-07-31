@@ -8,6 +8,8 @@ require 'rake'
 
 require_relative 'rake-builder/ArrayWrapper.rb'
 require_relative 'rake-builder/Build.rb'
+require_relative 'rake-builder/C8.rb'
+require_relative 'rake-builder/ComponentList.rb'
 require_relative 'rake-builder/Directory.rb'
 require_relative 'rake-builder/Errors.rb'
 require_relative 'rake-builder/Generate.rb'
