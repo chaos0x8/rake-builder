@@ -29,13 +29,13 @@ class GeneratedFile
 
     if @action
       file(@name => Names[dir, @requirements]) {
-        @action.call(@name)
+        call_(@action)
       }
     end
 
     if @code
       file(@name => Names[dir, @requirements]) {
-        if txt = @code.call(@name)
+        if txt = call_(@code)
           if txt.kind_of? Array
             txt = txt.join("\n")
           end
@@ -55,6 +55,10 @@ class GeneratedFile
   alias_method :_names_, :name
 
 private
+  def call_ callback
+    callback.call(@name, Names[@requirements].first)
+  end
+
   def format_ txt
     out, st = Open3.capture2e('clang-format', '-assume-filename', @name, '-style=file', stdin_data: txt)
     if st.exitstatus == 0
