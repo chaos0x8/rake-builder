@@ -11,7 +11,7 @@ module C8
     end
   end
 
-  class MultiTask < Rake::Task
+  class MultiTask < Rake::MultiTask
     def timestamp
       prerequisite_tasks.collect(&:timestamp).max || Time.now
     end
