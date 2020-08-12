@@ -32,7 +32,18 @@ main = Executable.new { |t|
   t.desc = 'Build testable application'
 }
 
-multitask(default: Names[main])
+main_without_lib = Executable.new { |t|
+  t.name = 'bin/main_without_lib'
+  t.requirements << install
+  t.sources << Dir['Source/main.cpp'] << sources
+  t.includes << ['Source']
+  t.flags << ['--std=c++0x']
+  t.libs << ['-lpthread']
+  t.pkgs << ['ruby']
+  t.desc = 'Build testable application'
+}
+
+multitask(default: Names[main, main_without_lib])
 
 task(:clean) {
   [ 'lib', 'bin', '.obj' ].each { |fn|

@@ -26,9 +26,6 @@ module RakeBuilder
     end
 
     attr_accessor :description
-
-    def desc= v
-      @description = v
-    end
+    alias_method :desc=, :description=
   end
 end

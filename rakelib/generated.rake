@@ -1,3 +1,6 @@
+require_relative '../lib/rake-builder/Target/GeneratedFile'
+require_relative '../lib/rake-builder/C8/Task'
+
 namespace(:generated) {
   ['ArrayWrapper', 'Target', 'Generate', 'C8'].each { |name|
     GeneratedFile.new { |t|
@@ -37,6 +40,5 @@ namespace(:generated) {
     }
   }
 
-  desc 'Generates files'
-  C8.task(all: 'lib/rake-builder.rb')
+  C8.task(default: 'lib/rake-builder.rb')
 }

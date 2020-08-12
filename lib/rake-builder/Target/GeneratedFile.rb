@@ -1,6 +1,9 @@
 require_relative '../Utility'
 require_relative '../Transform'
 require_relative '../Directory'
+require_relative '../RakeBuilder'
+require_relative '../Names'
+require_relative '../ArrayWrapper/Requirements'
 
 class GeneratedFile
   include RakeBuilder::Utility
