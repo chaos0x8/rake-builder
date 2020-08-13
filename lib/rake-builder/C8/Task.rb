@@ -1,13 +1,13 @@
 module C8
+  class Phony < Rake::Task
+    def timestamp
+      Time.at 0
+    end
+  end
+
   class Task < Rake::Task
     def timestamp
       prerequisite_tasks.collect(&:timestamp).max || Time.now
-    end
-
-    class << self
-      def define_task(*args, &block)
-        Rake.application.define_task(self, *args, &block)
-      end
     end
   end
 
@@ -15,19 +15,19 @@ module C8
     def timestamp
       prerequisite_tasks.collect(&:timestamp).max || Time.now
     end
-
-    class << self
-      def define_task(*args, &block)
-        Rake.application.define_task(self, *args, &block)
-      end
-    end
   end
 
-  def self.task(*args, &block)
-    C8::Task.define_task(*args, &block)
+  def self.register cls, name
+    cls.define_singleton_method(:define_task) { |*args, &block|
+      Rake.application.define_task(cls, *args, &block)
+    }
+
+    define_singleton_method(name) { |*args, &block|
+      cls.define_task(*args, &block)
+    }
   end
 
-  def self.multitask(*args, &block)
-    C8::MultiTask.define_task(*args, &block)
-  end
+  register C8::Phony, :phony
+  register C8::Task, :task
+  register C8::MultiTask, :multitask
 end

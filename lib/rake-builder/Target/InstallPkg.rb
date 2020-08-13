@@ -19,7 +19,7 @@ class InstallPkg
 
     required(:name, :pkgs)
 
-    C8.task(@name) {
+    C8.phony(@name) {
       pkgs = @pkgs.each.reject { |pkg|
         RakeBuilder::isPkgInstalled?(pkg)
       }
