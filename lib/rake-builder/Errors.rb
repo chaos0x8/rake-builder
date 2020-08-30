@@ -1,23 +1,29 @@
 module RakeBuilder
-  class MissingAttribute < RuntimeError
+  class Error < RuntimeError
+    def initialize msg
+      super(msg)
+    end
+  end
+
+  class MissingAttribute < RakeBuilder::Error
     def initialize attribute
       super("Missing attribute '#{attribute}'")
     end
   end
 
-  class AttributeAltError < RuntimeError
+  class AttributeAltError < RakeBuilder::Error
     def initialize *attributes
       super("One of the: #{attributes.join(', ')} must be present")
     end
   end
 
-  class MissingPkg < RuntimeError
+  class MissingPkg < RakeBuilder::Error
     def initialize pkg
       super("Missing pkg '#{pkg}'")
     end
   end
 
-  class PkgsInstalationError < RuntimeError
+  class PkgsInstalationError < RakeBuilder::Error
     def initialize pkgs
       super("Failed to install pkgs #{pkgs.collect { |x| "'#{x}'" }.join(', ')}")
     end

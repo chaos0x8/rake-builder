@@ -1,13 +1,18 @@
+require_relative 'RakeBuilder'
+
 class GitSubmodule
   include RakeBuilder::Utility
   include RakeBuilder::Transform
   include Rake::DSL
 
-  attr_accessor :name, :libs
+  attr_accessor :name
+  attr_reader :libs
 
   def initialize(name: nil, libs: [])
+    extend RakeBuilder::Desc
+
     @name = name
-    @libs = libs
+    @libs = RakeBuilder::Libs.new(libs)
 
     yield(self) if block_given?
 
@@ -18,16 +23,24 @@ class GitSubmodule
       sh 'git submodule update'
     }
 
-    @libs.each { |library|
-      file("#{@name}/#{library}" => ["#{@name}/.git"]) {
-        sh "cd #{@name} && rake #{Shellwords.escape(library)}"
+    C8.task(@name => ["#{@name}/.git"]) {
+      @libs.each { |lib|
+        sh "cd #{Shellwords.escape(@name)} && rake #{Shellwords.escape(lib)}"
       }
+    }
 
-      Rake::Task["#{@name}/#{library}"].invoke
+    @libs.each { |lib|
+      file("#{@name}/#{lib}" => [@name])
     }
   end
 
   def _names_
+    @libs.collect { |lib|
+      "#{@name}/#{lib}"
+    }
+  end
+
+  def _build_
     @libs.collect { |lib|
       "#{@name}/#{lib}"
     }

@@ -1,0 +1,3 @@
+[submodule "examples/git-submodule/c8-cpp"]
+	path = examples/git-submodule/c8-cpp
+	url = https://github.com/chaos0x8/c8-cpp.git

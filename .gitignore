@@ -2,12 +2,13 @@
 *.sw?
 
 # binaries
+*.a
 *.o
 *.mf
 *.gem
 
-examples/**/bin/*
 examples/**/.obj/*
+examples/**/bin/*
 examples/**/lib/*
 
 tags
