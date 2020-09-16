@@ -1,4 +1,4 @@
-require_relative 'ArrayWrapper/ArrayWrapper'
+require_relative 'array-wrapper/ArrayWrapper'
 
 module RakeBuilder
   class Pkgs

@@ -5,6 +5,12 @@ module RakeBuilder
     end
   end
 
+  class UnknownOption < RakeBuilder::Error
+    def initialize option, value
+      super("Unknown #{option} '#{value}'")
+    end
+  end
+
   class MissingAttribute < RakeBuilder::Error
     def initialize attribute
       super("Missing attribute '#{attribute}'")

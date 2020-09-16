@@ -1,3 +1,5 @@
+require 'rake'
+
 module RakeBuilder
   module Utility
     include Rake::DSL

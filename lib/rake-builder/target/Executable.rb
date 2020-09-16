@@ -6,7 +6,7 @@ class Executable < RakeBuilder::Target
     super(*args, **opts)
 
     dir = Names[Directory.new(name: @name)]
-    cl = RakeBuilder::ComponentList.new(name: to_cl(@name), sources: @sources)
+    cl = cl_
 
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources, @libs, cl]) {

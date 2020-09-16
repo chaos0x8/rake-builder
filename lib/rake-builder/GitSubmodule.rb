@@ -1,4 +1,5 @@
 require_relative 'RakeBuilder'
+require_relative 'Transform'
 
 class GitSubmodule
   include RakeBuilder::Utility

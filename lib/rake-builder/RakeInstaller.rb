@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative 'ArrayWrapper'
+require_relative 'array-wrapper'
 require_relative 'Utility'
 require_relative 'Names'
 

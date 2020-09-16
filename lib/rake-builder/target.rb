@@ -1,0 +1,5 @@
+require_relative 'target/Executable.rb'
+require_relative 'target/GeneratedFile.rb'
+require_relative 'target/InstallPkg.rb'
+require_relative 'target/Library.rb'
+require_relative 'target/Target.rb'

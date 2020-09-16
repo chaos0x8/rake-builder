@@ -3,7 +3,8 @@ require_relative '../Transform'
 require_relative '../Directory'
 require_relative '../RakeBuilder'
 require_relative '../Names'
-require_relative '../ArrayWrapper/Requirements'
+require_relative '../ComponentList'
+require_relative '../array-wrapper/Requirements'
 
 class GeneratedFile
   include RakeBuilder::Utility
@@ -12,8 +13,9 @@ class GeneratedFile
 
   attr_accessor :name, :action, :code, :requirements
 
-  def initialize(name: nil, action: nil, code: nil, description: nil, requirements: [], format: false)
+  def initialize(name: nil, action: nil, code: nil, description: nil, requirements: [], format: false, track: nil)
     extend RakeBuilder::Desc
+    extend RakeBuilder::Track
 
     @name = name
     @action = action
@@ -21,23 +23,26 @@ class GeneratedFile
     @requirements = RakeBuilder::Requirements.new(requirements)
     @description = description
     @format = format
+    @track = track
 
     yield(self) if block_given?
 
     required(:name)
     required_alt(:code, :action)
 
+    cl = cl_(rebuild: [:missing])
+
     dir = Names[Directory.new(name: @name)]
     desc @description if @description
 
     if @action
-      file(@name => Names[dir, @requirements]) {
+      file(@name => Names[dir, cl, @requirements]) {
         call_(@action)
       }
     end
 
     if @code
-      file(@name => Names[dir, @requirements]) {
+      file(@name => Names[dir, cl, @requirements]) {
         if txt = call_(@code)
           if txt.kind_of? Array
             txt = txt.join("\n")

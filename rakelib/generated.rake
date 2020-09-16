@@ -1,14 +1,16 @@
-require_relative '../lib/rake-builder/Target/GeneratedFile'
-require_relative '../lib/rake-builder/C8/Task'
+require_relative '../lib/rake-builder/target/GeneratedFile'
+require_relative '../lib/rake-builder/c8/Task'
 
 namespace(:generated) {
-  ['ArrayWrapper', 'Target', 'Generate', 'C8'].each { |name|
-    GeneratedFile.new { |t|
-      t.name = "lib/rake-builder/#{name}.rb"
-      t.requirements = Dir["lib/rake-builder/#{name}/*.rb"]
+  generated = Dir['lib/rake-builder/*'].select { |dir|
+    File.directory?(dir)
+  }.collect { |dir|
+    GeneratedFile.new(track: :requirements) { |t|
+      t.name = "#{dir}.rb"
+      t.requirements = Dir[File.join(dir, '*.rb')]
       t.code = proc {
         t.requirements.collect { |fn|
-          "require_relative '#{name}/#{File.basename(fn)}'"
+          "require_relative '#{File.basename(dir)}/#{File.basename(fn)}'"
         }.sort.join("\n")
       }
     }
@@ -17,10 +19,7 @@ namespace(:generated) {
   GeneratedFile.new { |t|
     t.name = 'lib/rake-builder.rb'
     t.requirements << FileList['lib/rake-builder/*.rb']
-    t.requirements << 'lib/rake-builder/ArrayWrapper.rb'
-    t.requirements << 'lib/rake-builder/Target.rb'
-    t.requirements << 'lib/rake-builder/Generate.rb'
-    t.requirements << 'lib/rake-builder/C8.rb'
+    t.requirements << Names[generated]
     t.code = proc {
       content = []
       content << "#!/usr/bin/env ruby"

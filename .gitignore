@@ -11,4 +11,5 @@ examples/**/.obj/*
 examples/**/bin/*
 examples/**/lib/*
 
-tags
+/tags
+/.obj

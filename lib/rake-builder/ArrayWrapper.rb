@@ -1,6 +1,0 @@
-require_relative 'ArrayWrapper/ArrayWrapper.rb'
-require_relative 'ArrayWrapper/Flags.rb'
-require_relative 'ArrayWrapper/Includes.rb'
-require_relative 'ArrayWrapper/Libs.rb'
-require_relative 'ArrayWrapper/Requirements.rb'
-require_relative 'ArrayWrapper/Sources.rb'

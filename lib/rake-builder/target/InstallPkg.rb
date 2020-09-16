@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require_relative '../RakeInstaller'
-require_relative '../C8'
+require_relative '../c8/Task'
 
 class InstallPkg
   include RakeBuilder::Utility
@@ -11,6 +11,8 @@ class InstallPkg
   attr_reader :pkgs
 
   def initialize(name: nil, pkgs: [], description: nil)
+    extend RakeBuilder::Desc
+
     @name = name
     @pkgs = RakeBuilder::InstallPkgList.new(pkgs)
     @description = description
@@ -19,6 +21,7 @@ class InstallPkg
 
     required(:name, :pkgs)
 
+    desc @description if @description
     C8.phony(@name) {
       pkgs = @pkgs.each.reject { |pkg|
         RakeBuilder::isPkgInstalled?(pkg)
