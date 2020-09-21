@@ -10,6 +10,6 @@ class Names
       else
         a.to_s
       end
-    }.flatten.compact
+    }.flatten.uniq.compact
   end
 end

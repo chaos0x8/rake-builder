@@ -52,7 +52,9 @@ class GeneratedFile
             txt = format_(txt)
           end
 
-          unless File.exist?(@name) and IO.read(@name) == txt
+          if File.exist?(@name) and IO.read(@name) == txt
+            FileUtils.touch @name
+          else
             IO.write(@name, txt)
           end
         end

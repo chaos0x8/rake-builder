@@ -14,9 +14,11 @@ module RakeBuilder
     end
 
     def << sources
-      [ sources ].flatten.uniq.each { |src|
+      [sources].flatten.uniq.compact.each { |src|
         if src.kind_of? Sources
           self << src.value
+        elsif src.kind_of? SharedSources
+          self << src.sources
         elsif src.kind_of? SourceFile
           @value << src
         else

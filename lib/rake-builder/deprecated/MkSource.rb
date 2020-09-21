@@ -1,4 +1,8 @@
+require_relative 'Deprecated'
+
 def mkSources sources, flags: [], includes: [], pkgs: [], requirements: []
+  Deprecated.deprecated mkSources: :SharedSources
+
   flags = RakeBuilder::Flags.new(flags)
   libs = RakeBuilder::Libs.new([])
   pkgs = RakeBuilder::Pkgs.new(pkgs, flags: flags, libs: libs)

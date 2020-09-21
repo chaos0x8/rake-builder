@@ -27,7 +27,7 @@ module RakeBuilder
           self << item.value
         else
           @value << item
-          @value = @value.flatten.uniq
+          @value = @value.flatten.uniq.compact
         end
       end
 
@@ -40,11 +40,5 @@ module RakeBuilder
 
   protected
     attr_reader :value
-  end
-
-  module VIterable
-    def each(&block)
-      @value.each(&block)
-    end
   end
 end

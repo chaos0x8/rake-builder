@@ -1,6 +1,4 @@
-#!/usr/bin/ruby
-
-gem 'rake-builder', '~> 2.0', '>= 2.0.0'
+gem 'rake-builder'
 
 autoload :FileUtils, 'fileutils'
 

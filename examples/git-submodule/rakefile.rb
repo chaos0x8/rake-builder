@@ -1,6 +1,4 @@
-#!/usr/bin/ruby
-
-gem 'rake-builder', '~> 2.0'
+gem 'rake-builder'
 
 require 'rake-builder'
 

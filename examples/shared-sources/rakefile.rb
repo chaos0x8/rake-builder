@@ -1,6 +1,4 @@
-#!/usr/bin/ruby
-
-gem 'rake-builder', '~> 2.0', '>= 2.0.0'
+gem 'rake-builder'
 
 autoload :FileUtils, 'fileutils'
 
@@ -8,42 +6,47 @@ require 'rake-builder'
 
 install = InstallPkg.new(name: :install, pkgs: ['ruby-dev'])
 
-sources = mkSources(
-  Dir['Source/*.cpp'] - ['Source/main.cpp'],
-  flags: ['--std=c++17'],
-  pkgs: ['ruby'],
-  includes: ['Source'],
-  requirements: install)
+sources = SharedSources.new { |t|
+  t.sources << Dir['Source/*.cpp'] - ['Source/main.cpp']
+  t.flags << ['--std=c++17']
+  t.includes << ['Source']
+  t.pkgs << ['ruby']
+  t.requirements << install
+}
+
+main = SharedSources.new { |t|
+  t.sources << 'Source/main.cpp'
+  t.flags << ['--std=c++17']
+  t.includes << ['Source']
+  t.pkgs << ['ruby']
+  t.requirements << install
+}
 
 lib = Library.new { |t|
   t.name = 'lib/libmain.a'
-  t.sources << sources
   t.desc = 'Build testable library'
+
+  sources.slice(:sources, :flags, :pkgs, :includes) >> t
 }
 
-main = Executable.new { |t|
+app = Executable.new { |t|
   t.name = 'bin/main'
-  t.requirements << install
-  t.sources << Dir['Source/main.cpp']
-  t.includes << ['Source']
-  t.flags << ['--std=c++0x']
+  t.sources << main
   t.libs << ['-lpthread', lib]
   t.pkgs << ['ruby']
   t.desc = 'Build testable application'
 }
 
-main_without_lib = Executable.new { |t|
+app_without_lib = Executable.new { |t|
   t.name = 'bin/main_without_lib'
-  t.requirements << install
-  t.sources << Dir['Source/main.cpp'] << sources
-  t.includes << ['Source']
-  t.flags << ['--std=c++0x']
   t.libs << ['-lpthread']
-  t.pkgs << ['ruby']
   t.desc = 'Build testable application'
+
+  main.slice(:sources, :pkgs) >> t
+  sources >> t
 }
 
-multitask(default: Names[main, main_without_lib])
+multitask(default: Names[app, app_without_lib])
 
 task(:clean) {
   [ 'lib', 'bin', '.obj' ].each { |fn|

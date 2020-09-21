@@ -5,10 +5,6 @@ require_relative 'Utility'
 require_relative 'Names'
 
 module RakeBuilder
-  class InstallPkgList < ArrayWrapper
-    include VIterable
-  end
-
   @@install_mutext = Mutex.new
 
   def install_lock &block

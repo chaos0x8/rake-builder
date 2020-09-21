@@ -10,7 +10,7 @@ class Build
       else
         a.to_s
       end
-    }.flatten
+    }.flatten.uniq.compact
   end
 end
 
