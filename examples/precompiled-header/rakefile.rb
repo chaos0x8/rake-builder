@@ -21,7 +21,7 @@ C8.task(precompiled: Names[ph])
 task(default: Names[main])
 
 task(:clean) {
-  ['lib', 'bin', '.obj'].each { |fn|
+  ['lib', 'bin', RakeBuilder.outDir].each { |fn|
     FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
   }
 

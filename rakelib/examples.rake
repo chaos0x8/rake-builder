@@ -42,7 +42,7 @@ namespace(:examples) {
         d << "task(default: Names[main])"
         d << ""
         d << "task(:clean) {"
-        d << "  ['lib', 'bin', '.obj'].each { |fn|"
+        d << "  [RakeBuilder.outDir, 'lib', 'bin'].each { |fn|"
         d << "    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)"
         d << "  }"
         d << "}"

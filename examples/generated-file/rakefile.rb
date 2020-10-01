@@ -46,7 +46,7 @@ app = Executable.new { |t|
 multitask(default: Names[app])
 
 task(:clean) {
-  Names['.obj', 'bin', main, hello_hpp, hello_cpp].each { |fn|
+  Names[RakeBuilder.outDir, 'bin', main, hello_hpp, hello_cpp].each { |fn|
     if File.directory?(fn)
       FileUtils.rm_rf fn, verbose: true
     elsif File.exist?(fn)

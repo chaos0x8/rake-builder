@@ -13,7 +13,7 @@ app = Executable.new { |t|
 multitask(default: Names[app])
 
 task(:clean) {
-  ['.obj', app.name].each { |fn|
+  [RakeBuilder.outDir, app.name].each { |fn|
     if File.directory?(fn)
       FileUtils.rm_rf fn, verbose: true
     elsif File.exist?(fn)

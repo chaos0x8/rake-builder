@@ -18,7 +18,7 @@ main = Executable.new { |t|
 task(default: Names[main])
 
 task(:clean) {
-  ['.obj', 'bin'].each { |fn|
+  [RakeBuilder.outDir, 'bin'].each { |fn|
     FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
   }
 }

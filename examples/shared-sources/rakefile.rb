@@ -49,7 +49,7 @@ app_without_lib = Executable.new { |t|
 multitask(default: Names[app, app_without_lib])
 
 task(:clean) {
-  [ 'lib', 'bin', '.obj' ].each { |fn|
+  [ 'lib', 'bin', RakeBuilder.outDir ].each { |fn|
     if File.directory?(fn)
       FileUtils.rm_rf fn, verbose: true
     elsif File.exist?(fn)

@@ -20,7 +20,7 @@ task(:clean) {
     FileUtils.rm t.name, verbose: true if File.exist?(t.name)
   }
 
-  ['.obj', 'bin'].each { |fn|
+  [RakeBuilder.outDir, 'bin'].each { |fn|
     FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
   }
 }

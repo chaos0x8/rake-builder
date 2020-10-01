@@ -1,22 +1,20 @@
 module RakeBuilder
-  @@gpp = 'g++'
-  @@ar = 'ar'
+  def self.module_accessor **opts
+    opts.each { |tag, initialValue|
+      class_variable_set(:"@@#{tag}", initialValue)
 
-  def self.gpp
-    @@gpp
+      define_singleton_method(:"#{tag}") {
+        class_variable_get(:"@@#{tag}")
+      }
+
+      define_singleton_method(:"#{tag}=") { |value|
+        class_variable_set(:"@@#{tag}", value)
+      }
+    }
   end
 
-  def self.gpp= value
-    @@gpp = value
-  end
-
-  def self.ar
-    @@ar
-  end
-
-  def self.ar= value
-    @@ar = value
-  end
+  module_accessor gpp: 'g++', ar: 'ar'
+  module_accessor outDir: '.obj'
 
   module Desc
     def self.extended cls

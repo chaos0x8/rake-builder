@@ -45,7 +45,7 @@ class ExternalProject
   end
 
   def find_libs
-    @libs.collect { |fn|
+    @find_libs ||= @libs.collect { |fn|
       r = retry_once(proc {
         Dir[File.join(@output_dir, '**', fn)].first
       }, recover: proc {
@@ -68,7 +68,7 @@ class ExternalProject
   end
 
   def find_includes
-    @includes.collect { |fn|
+    @find_includes ||= @includes.collect { |fn|
       retry_once(proc {
         Dir[File.join(@output_dir, '**', fn)].collect { |r| r.chomp(fn) }.first
       }, recover: proc {
@@ -91,9 +91,9 @@ class ExternalProject
 
 private
   def cloneTask url
-    output_dir = File.join('.obj', File.basename(url).chomp('.git'))
+    output_dir = File.join(RakeBuilder.outDir, File.basename(url).chomp('.git'))
 
-    file(output_dir => Names[Directory.new('.obj')]) {
+    file(output_dir => Names[Directory.new(RakeBuilder.outDir)]) {
       C8.sh 'git', 'clone', url, output_dir
     }
 
@@ -104,9 +104,9 @@ private
   def downloadTask url
     [{ ext: '.tar.gz', tar_options: '-xzf' }].each { |ext:, tar_options:|
       if url.match(/#{Regexp.quote(ext)}$/)
-        archive = File.join('.obj', File.basename(url))
-        output_dir = File.join('.obj', File.basename(url).chomp(ext))
-        file(output_dir => Names[Directory.new('.obj')]) {
+        archive = File.join(RakeBuilder.outDir, File.basename(url))
+        output_dir = File.join(RakeBuilder.outDir, File.basename(url).chomp(ext))
+        file(output_dir => Names[Directory.new(RakeBuilder.outDir)]) {
           begin
             sh 'wget', url, '-O', archive
             sh 'tar', '-C', File.dirname(archive), tar_options, archive

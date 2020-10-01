@@ -42,8 +42,8 @@ module RakeBuilder
 
     {
       Sources.new(['main.cpp'], flags: [], includes: [], requirements: []) => [
-        { :shouldRespondTo => [Names, ['.obj/main.cpp.o']] },
-        { :shouldRespondTo => [Build, ['.obj/main.cpp.o']] },
+        { :shouldRespondTo => [Names, [File.join(RakeBuilder.outDir, 'main.cpp.o')]] },
+        { :shouldRespondTo => [Build, [File.join(RakeBuilder.outDir, 'main.cpp.o')]] },
         { :shouldHaveMethod => [:-] }
       ],
       Requirements.new(['main.cpp']) => [

@@ -17,7 +17,7 @@ module RakeBuilder
     end
 
   private
-    def adExt(x, ext, dir: '.obj')
+    def adExt(x, ext, dir: RakeBuilder.outDir)
       if x.respond_to?(:collect)
         x.collect { |y| adExt(y, ext, dir: dir) }
       else
