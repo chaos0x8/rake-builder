@@ -5,6 +5,9 @@ require_relative '../RakeBuilder'
 require_relative '../Names'
 require_relative '../ComponentList'
 require_relative '../array-wrapper/Requirements'
+require_relative '../array-wrapper/Track'
+
+autoload :Open3, 'open3'
 
 class GeneratedFile
   include RakeBuilder::Utility
@@ -13,9 +16,9 @@ class GeneratedFile
 
   attr_accessor :name, :action, :code, :requirements
 
-  def initialize(name: nil, action: nil, code: nil, description: nil, requirements: [], format: false, track: nil)
+  def initialize(name: nil, action: nil, code: nil, description: nil, requirements: [], format: false)
     extend RakeBuilder::Desc
-    extend RakeBuilder::Track
+    extend RakeBuilder::Track::Ext
 
     @name = name
     @action = action
@@ -23,7 +26,6 @@ class GeneratedFile
     @requirements = RakeBuilder::Requirements.new(requirements)
     @description = description
     @format = format
-    @track = track
 
     yield(self) if block_given?
 
@@ -32,7 +34,7 @@ class GeneratedFile
 
     cl = cl_(rebuild: [:missing])
 
-    dir = Names[Directory.new(name: @name)]
+    dir = Names[Directory.new(@name)]
     desc @description if @description
 
     if @action

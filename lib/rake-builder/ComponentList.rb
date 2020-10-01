@@ -44,7 +44,7 @@ module RakeBuilder
 
   private
     def requirements_ rebuild
-      dir = Names[Directory.new(name: @name)]
+      dir = Names[Directory.new(@name)]
 
       if rebuild.include? :change
         Names[dir, @sources]

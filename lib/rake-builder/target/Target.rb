@@ -1,5 +1,7 @@
 require_relative '../Utility'
 require_relative '../Transform'
+require_relative '../array-wrapper/Track'
+require_relative '../c8/Sh'
 
 module RakeBuilder
   class Target
@@ -12,7 +14,7 @@ module RakeBuilder
 
     def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
       extend RakeBuilder::Desc
-      extend RakeBuilder::Track
+      extend RakeBuilder::Track::Ext
 
       @name = name
       @flags = RakeBuilder::Flags.new(flags)
@@ -22,11 +24,14 @@ module RakeBuilder
       @requirements = RakeBuilder::Requirements.new(requirements)
       @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes, requirements: @requirements)
       @description = description
-      @track = :sources
+      track :sources
 
       yield(self) if block_given?
+    end
 
-      required(:name, :sources)
+    def << target
+      target >> self
+      self
     end
 
     def _names_

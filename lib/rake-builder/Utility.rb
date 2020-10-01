@@ -23,10 +23,14 @@ module RakeBuilder
       end
     end
 
+    def is_missing? o
+      o.nil? or (o.respond_to?(:empty?) and o.empty?)
+    end
+
     def required *attributes
       attributes.each { |sym|
         value = instance_variable_get(:"@#{sym}")
-        if value.nil? or (value.respond_to?(:empty?) and value.empty?)
+        if is_missing?(value)
           raise RakeBuilder::MissingAttribute.new(sym.to_s)
         end
       }
@@ -35,17 +39,12 @@ module RakeBuilder
     def required_alt *attributes
       count = attributes.count { |sym|
         value = instance_variable_get(:"@#{sym}")
-        missing = value.nil? or (value.respond_to?(:empty?) and value.empty?)
-        not missing
+        !is_missing?(value)
       }
 
       if count != 1
         raise RakeBuilder::AttributeAltError.new(*attributes)
       end
-    end
-
-    def _build_join_ obj
-      Shellwords.join(Build[obj])
     end
   end
 end

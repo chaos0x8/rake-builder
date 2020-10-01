@@ -1,23 +1,31 @@
 module RakeBuilder
   module Transform
     def to_obj name
-      chExt(name, '.o')
+      adExt(name, '.o')
     end
 
     def to_mf name
-      chExt(name, '.mf')
+      adExt(name, '.mf')
     end
 
     def to_cl name
-      chExt(name, '.cl')
+      adExt(name, '.cl')
+    end
+
+    def to_gch name
+      adExt(name, '.gch', dir: '.')
     end
 
   private
-    def chExt(x, ext)
+    def adExt(x, ext, dir: '.obj')
       if x.respond_to?(:collect)
-        x.collect { |y| chExt(y, ext) }
+        x.collect { |y| adExt(y, ext, dir: dir) }
       else
-        '.obj/' + x.ext(ext)
+        if dir == '.'
+          "#{x}#{ext}"
+        else
+          File.join(dir, "#{x}#{ext}")
+        end
       end
     end
   end

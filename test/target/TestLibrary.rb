@@ -9,6 +9,7 @@ class TestLibrary < Test::Unit::TestCase
     setup {
       @sut = Library.new { |t|
         t.name = 'library'
+        t.sources << 'foo.cpp'
       }
     }
 
@@ -16,6 +17,7 @@ class TestLibrary < Test::Unit::TestCase
       should("set description/#{tag}") {
         sut = Library.new { |t|
           t.name = 'library'
+          t.sources << 'foo.cpp'
           t.send(tag, 'foo')
         }
 

@@ -5,11 +5,13 @@ namespace(:generated) {
   generated = Dir['lib/rake-builder/*'].select { |dir|
     File.directory?(dir)
   }.collect { |dir|
-    GeneratedFile.new(track: :requirements) { |t|
+    GeneratedFile.new { |t|
       t.name = "#{dir}.rb"
-      t.requirements = Dir[File.join(dir, '*.rb')]
-      t.code = proc {
-        t.requirements.collect { |fn|
+      t.track FileList[File.join(dir, '*.rb')]
+      t.code = proc { |dst|
+        $stdout.puts "Generating #{dst} ..."
+
+        t.tracked.collect { |fn|
           "require_relative '#{File.basename(dir)}/#{File.basename(fn)}'"
         }.sort.join("\n")
       }
@@ -18,9 +20,12 @@ namespace(:generated) {
 
   GeneratedFile.new { |t|
     t.name = 'lib/rake-builder.rb'
-    t.requirements << FileList['lib/rake-builder/*.rb']
     t.requirements << Names[generated]
-    t.code = proc {
+    t.track :requirements
+    t.track FileList['lib/rake-builder/*.rb']
+    t.code = proc { |dst|
+      $stdout.puts "Generating #{dst} ..."
+
       content = []
       content << "#!/usr/bin/env ruby"
       content << ""
@@ -30,7 +35,7 @@ namespace(:generated) {
       content << ""
       content << "require 'rake'"
       content << ""
-      content << Names[t.requirements].collect { |fn|
+      content << Names[t.tracked].collect { |fn|
         "require_relative 'rake-builder/#{File.basename(fn)}'"
       }.sort
       content << ""

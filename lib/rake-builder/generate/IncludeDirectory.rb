@@ -5,11 +5,12 @@ module Generate
   extend RakeBuilder::Transform
 
   def self.includeDirectory(dirName, requirements: [])
-    GeneratedFile.new(format: true, track: Dir["#{dirName}/*.h", "#{dirName}/*.hpp"]) { |t|
+    GeneratedFile.new(format: true) { |t|
       t.name = "#{dirName}.hpp"
 
-      dir = Names[Directory.new(name: t.name)]
+      dir = Names[Directory.new(t.name)]
 
+      t.track Dir["#{dirName}/*.h", "#{dirName}/*.hpp"]
       t.requirements << requirements
       t.code = proc {
         $stdout.puts "Generating '#{t.name}'..."
@@ -18,7 +19,7 @@ module Generate
           d = []
           d << "#pragma once"
           d << ""
-          Dir["#{dirName}/*.h", "#{dirName}/*.hpp"].each { |req|
+          t.tracked.each { |req|
             d << "#include \"#{File.basename(dirName)}/#{File.basename(req)}\""
           }
           d.join "\n"

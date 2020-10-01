@@ -1,13 +1,15 @@
+require 'forwardable'
+
 module RakeBuilder
   module ExOnNames
     def _names_
-      raise TypeError.new('This type should not be used by Names')
+      raise TypeError.new("This type ('#{self.class}') should not be used by Names")
     end
   end
 
   module ExOnBuild
     def _build_
-      raise TypeError.new('This type should not be used by Build')
+      raise TypeError.new("This type ('#{self.class}') should not be used by Build")
     end
   end
 
@@ -15,6 +17,8 @@ module RakeBuilder
     include ExOnNames
     include ExOnBuild
     include Enumerable
+
+    extend Forwardable
 
     def initialize item
       @value = Array.new
@@ -34,9 +38,7 @@ module RakeBuilder
       self
     end
 
-    def each &block
-      @value.each(&block)
-    end
+    def_delegators :@value, :each, :empty?, :size
 
   protected
     attr_reader :value

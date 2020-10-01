@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 require_relative '../RakeInstaller'
 require_relative '../c8/Task'
 
@@ -19,7 +17,7 @@ class InstallPkg
 
     yield(self) if block_given?
 
-    required(:name, :pkgs)
+    required(:name)
 
     desc @description if @description
     C8.phony(@name) {

@@ -1,10 +1,15 @@
 # temp files
 *.sw?
+*.rej
+*.patch
+*.orig
 
 # binaries
 *.a
 *.o
 *.mf
+*.cl
+*.gch
 *.gem
 
 examples/**/.obj/*

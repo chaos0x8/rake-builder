@@ -5,13 +5,15 @@ class Library < RakeBuilder::Target
   def initialize(*args, **opts)
     super(*args, **opts)
 
-    dir = Names[Directory.new(name: @name)]
+    required(:name, :sources)
+
+    dir = Names[Directory.new(@name)]
     cl = cl_
 
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources, cl]) {
-      sh 'rm', @name if File.exist? @name
-      sh "#{RakeBuilder::ar} vsr #{@name} #{_build_join_(@sources)}"
+      FileUtils.rm @name, verbose: true if File.exist?(@name) and not File.directory?(@name)
+      C8.sh RakeBuilder::ar, 'vsr', @name, *Build[@sources], verbose: true
     }
   end
 

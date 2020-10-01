@@ -5,7 +5,7 @@ class Directory
 
   @@definedDirs = []
 
-  def initialize(name:)
+  def initialize(name)
     @name = File.dirname(name)
 
     yield(self) if block_given?

@@ -1,9 +1,7 @@
 require_relative 'ArrayWrapper'
 
 module RakeBuilder
-  class Sources
-    include Enumerable
-
+  class Sources < ArrayWrapper
     def initialize(sources, flags:, includes:, requirements:)
       @value = Array.new
       @flags = flags
@@ -31,6 +29,10 @@ module RakeBuilder
 
     def each &block
       @value.each(&block)
+    end
+
+    def _build_
+      Build[@value]
     end
 
     def _names_
