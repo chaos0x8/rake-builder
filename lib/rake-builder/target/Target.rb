@@ -24,9 +24,10 @@ module RakeBuilder
       @requirements = RakeBuilder::Requirements.new(requirements)
       @sources = RakeBuilder::Sources.new(sources, flags: @flags, includes: @includes, requirements: @requirements)
       @description = description
-      track :sources
 
       yield(self) if block_given?
+
+      track :sources
     end
 
     def << target
