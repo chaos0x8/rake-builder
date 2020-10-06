@@ -1,3 +1,4 @@
+require_relative 'c8/Config.rb'
 require_relative 'c8/Data.rb'
 require_relative 'c8/Erb.rb'
 require_relative 'c8/Puts.rb'
