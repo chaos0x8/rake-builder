@@ -18,7 +18,7 @@ module Generate
         $stdout.puts "Generating '#{t.name}'..."
 
         File.open(t.name, 'w') { |f|
-          C8.erb C8.data(__FILE__).data, dir: dirName, includes: t.tracked
+          C8.erb C8.data(__FILE__).data, dir: File.basename(dirName), includes: t.tracked
         }
       }
     }
@@ -29,5 +29,5 @@ __END__
 #pragma once
 
 <%- @includes.each { |inc| -%>
-#include "<%= File.join(@dir, inc) %>"
+#include "<%= File.join(@dir, File.basename(inc)) %>"
 <%- } -%>
