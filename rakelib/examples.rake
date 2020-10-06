@@ -1,3 +1,6 @@
+require_relative '../lib/rake-builder/c8/Erb'
+require_relative '../lib/rake-builder/c8/Data'
+
 namespace(:examples) {
   task(:default => 'gem:install') {
     separator = '---------------------'
@@ -27,36 +30,13 @@ namespace(:examples) {
     files << GeneratedFile.new { |t|
       t.name = File.join('examples', name, 'rakefile.rb')
       t.code = proc {
-        d = []
-        d << "gem 'rake-builder'"
-        d << ""
-        d << "require 'rake-builder'"
-        d << ""
-        d << "main = Executable.new { |t|"
-        d << "  t.name = 'bin/main'"
-        d << "  t.sources << FileList['src/**/*.cpp']"
-        d << "  t.includes << 'src'"
-        d << "  t.flags << '--std=c++17'"
-        d << "}"
-        d << ""
-        d << "task(default: Names[main])"
-        d << ""
-        d << "task(:clean) {"
-        d << "  [RakeBuilder.outDir, 'lib', 'bin'].each { |fn|"
-        d << "    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)"
-        d << "  }"
-        d << "}"
+        C8.erb C8.data(__FILE__).rakefile
       }
     }
     files << GeneratedFile.new(format: true) { |t|
       t.name = File.join('examples', name, 'src', 'main.cpp')
       t.code = proc {
-        d = []
-        d << "#include <iostream>"
-        d << ""
-        d << "int main(int argc, char** argv) {"
-        d << "  std::cout << \"Hello world!\" << std::endl;"
-        d << "}"
+        C8.erb C8.data(__FILE__).main
       }
     }
     C8.task("new_#{name}" => Names[files])
@@ -66,3 +46,34 @@ namespace(:examples) {
 
 desc 'Compiles examples'
 task(examples: 'examples:default')
+
+__END__
+@@rakefile=
+gem 'rake-builder'
+
+require 'rake-builder'
+
+main = Executable.new { |t|
+  t.name = 'bin/main'
+  t.sources << FileList['src/**/*.cpp']
+  t.includes << 'src'
+  t.flags << '--std=c++17'
+}
+
+task(default: Names[main])
+
+task(:clean) {
+  [RakeBuilder.outDir, 'lib', 'bin'].each { |fn|
+    if File.directory?(fn)
+      FileUtils.rm_rf fn, verbose: true
+    elsif File.exist?(fn)
+      FileUtils.rm fn, verbose: true
+    end
+  }
+}
+@@main=
+#include <iostream>
+
+int main(int argc, char** argv) {
+  std::cout << "Hello world!\n";
+}

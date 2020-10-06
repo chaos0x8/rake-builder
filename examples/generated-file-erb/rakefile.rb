@@ -6,7 +6,7 @@ enum = GeneratedFile.new(format: true) { |t|
   t.name = 'src/enum.hpp'
   t.requirements << 'src/enum.hpp.erb'
   t.code = proc {
-    C8.erb('src/enum.hpp.erb', names: ['a', 'b', 'c'])
+    C8.erb(IO.read('src/enum.hpp.erb'), names: ['a', 'b', 'c'])
   }
 }
 
@@ -21,7 +21,11 @@ main = Executable.new { |t|
 task(default: Names[main])
 
 task(:clean) {
-  [RakeBuilder.outDir, 'lib', 'bin'].each { |fn|
-    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
+  [RakeBuilder.outDir, 'lib', 'bin', *Names[enum]].each { |fn|
+    if File.directory?(fn)
+      FileUtils.rm_rf fn, verbose: true
+    elsif File.exist?(fn)
+      FileUtils.rm fn, verbose: true
+    end
   }
 }
