@@ -7,7 +7,8 @@ c8 = ExternalProject.new { |t|
   t.git = 'https://github.com/chaos0x8/c8-cpp'
   t.libs << 'libc8-common.a'
   t.includes << 'c8-common.hpp'
-  t.rake_tasks << 'lib/libc8-common.a'
+  t.rakeTasks << 'lib/libc8-common.a'
+  t.noRebuild = true
 }
 
 main = Executable.new { |t|

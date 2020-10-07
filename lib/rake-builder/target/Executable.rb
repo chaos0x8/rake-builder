@@ -5,7 +5,7 @@ class Executable < RakeBuilder::Target
   def initialize(*args, **opts)
     super(*args, **opts)
 
-    required(:name, :sources)
+    required(:name)
 
     dir = Names[Directory.new(@name)]
     cl = cl_

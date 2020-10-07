@@ -5,20 +5,36 @@ class Library < RakeBuilder::Target
   def initialize(*args, **opts)
     super(*args, **opts)
 
-    required(:name, :sources)
+    required(:name)
 
     dir = Names[Directory.new(@name)]
     cl = cl_
 
-    desc @description if @description
-    file(@name => Names[dir, @requirements, @sources, cl]) {
-      FileUtils.rm @name, verbose: true if File.exist?(@name) and not File.directory?(@name)
-      C8.sh RakeBuilder::ar, 'vsr', @name, *Build[@sources], verbose: true
-    }
+    if @sources.empty?
+      $stderr.puts "There is no sources for: #{@name}"
+    else
+      desc @description if @description
+      file(@name => Names[dir, @requirements, @sources, cl]) {
+        FileUtils.rm @name, verbose: true if File.exist?(@name)
+        C8.sh RakeBuilder::ar, 'vsr', @name, *Build[@sources], verbose: true
+      }
+    end
+  end
+
+  def _names_
+    if @sources.empty?
+      []
+    else
+      [ @name, @sources ]
+    end
   end
 
   def _build_
-    Build[@name]
+    if @sources.empty?
+      []
+    else
+      [ @name ]
+    end
   end
 end
 
