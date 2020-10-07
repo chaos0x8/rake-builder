@@ -11,3 +11,4 @@ task(:all => ['test', 'examples', 'gem'])
 
 desc 'Runs unit tests and creates gem file'
 task(:default => ['test', 'gem'])
+

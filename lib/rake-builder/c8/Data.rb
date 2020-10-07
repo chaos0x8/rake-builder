@@ -49,16 +49,20 @@ module C8
             variables.each { |v|
               instance_variable_set(:"@#{v.name}", v.data.join("\n"))
 
-              self.class.define_method(:"#{v.name}") {
-                instance_variable_get(:"@#{v.name}")
+              self.class.class_eval {
+                define_method(:"#{v.name}") {
+                  instance_variable_get(:"@#{v.name}")
+                }
               }
             }
 
             if free.size > 0
               instance_variable_set(:@data, free.join("\n"))
 
-              self.class.define_method(:data) {
-                instance_variable_get(:@data)
+              self.class.class_eval {
+                define_method(:data) {
+                  instance_variable_get(:@data)
+                }
               }
             end
           end
