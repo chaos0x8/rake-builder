@@ -1,4 +1,10 @@
 module C8
+  class MultiPhony < Rake::Task
+    def timestamp
+      Time.at 0
+    end
+  end
+
   class Phony < Rake::Task
     def timestamp
       Time.at 0
@@ -27,6 +33,7 @@ module C8
     }
   end
 
+  register C8::MultiPhony, :multiphony
   register C8::Phony, :phony
   register C8::Task, :task
   register C8::MultiTask, :multitask
