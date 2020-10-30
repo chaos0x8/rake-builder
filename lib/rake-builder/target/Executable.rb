@@ -13,7 +13,9 @@ class Executable < RakeBuilder::Target
     desc @description if @description
     file(@name => Names[dir, @requirements, @sources, @libs, cl]) {
       C8.sh RakeBuilder::gpp, *Build[@flags], *Build[@sources],
-            '-o', @name, *Build[@libs], verbose: true
+            '-o', @name, *Build[@libs],
+            verbose: RakeBuilder.verbose, silent: RakeBuilder.silent,
+            nonVerboseMessage: "#{RakeBuilder::gpp} #{@name}"
     }
   end
 

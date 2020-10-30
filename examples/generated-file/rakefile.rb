@@ -6,6 +6,7 @@ require 'rake-builder'
 
 hello_hpp = GeneratedFile.new { |t|
   t.name = 'src/hello.hpp'
+  t.requirements << 'rakefile.rb'
   t.action = proc { |fn|
     c = [ '#pragma once',
           '',
@@ -16,6 +17,7 @@ hello_hpp = GeneratedFile.new { |t|
 
 hello_cpp = GeneratedFile.new(format: true) { |t|
   t.name = 'src/hello.cpp'
+  t.requirements << 'rakefile.rb'
   t.code = proc {
     [ '#include <iostream>',
       '#include "hello.hpp"',
@@ -28,6 +30,7 @@ hello_cpp = GeneratedFile.new(format: true) { |t|
 
 main = GeneratedFile.new(format: true) { |t|
   t.name = 'src/main.cpp'
+  t.requirements << 'rakefile.rb'
   t.code = proc {
     [ '#include "hello.hpp"',
       '',
@@ -37,9 +40,14 @@ main = GeneratedFile.new(format: true) { |t|
   }
 }
 
+generate = Invoke.new { |t|
+  t.name = :generate
+  t.requirements << [main, hello_hpp, hello_cpp]
+}
+
 app = Executable.new { |t|
   t.name = 'bin/app'
-  t.requirements << [main, hello_hpp, hello_cpp]
+  t.requirements << generate
   t.sources << Names[main, hello_cpp]
 }
 

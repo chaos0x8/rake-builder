@@ -9,7 +9,8 @@ class HeaderFile < RakeBuilder::Target
     dir = Names[Directory.new(to_obj(@name))]
     file(to_mf(@name) => Names[dir, @requirements, readMf(to_mf(@name)), @name]) {
       C8.sh RakeBuilder::gpp, *Build[@flags], *Build[@includes],
-            '-x', 'c++-header', '-c', @name, '-M', '-MM', '-MF', to_mf(@name), verbose: true
+            '-x', 'c++-header', '-c', @name, '-M', '-MM', '-MF', to_mf(@name),
+            verbose: RakeBuilder.verbose, silent: RakeBuilder.silent
     }
 
     desc @description if @description
@@ -21,7 +22,9 @@ class HeaderFile < RakeBuilder::Target
 
       begin
         C8.sh RakeBuilder::gpp, *Build[@flags], *Build[@includes],
-              '-x', 'c++', '-c', '-', '-o', to_obj(@name), in: r, verbose: true
+              '-x', 'c++', '-c', '-', '-o', to_obj(@name), in: r,
+              verbose: RakeBuilder.verbose, silent: RakeBuilder.silent,
+              nonVerboseMessage: "#{RakeBuilder::gpp} #{@name}"
       ensure
         r.close
       end

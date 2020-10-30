@@ -1,3 +1,5 @@
+require 'rake'
+
 module C8
   class MultiPhony < Rake::Task
     def timestamp

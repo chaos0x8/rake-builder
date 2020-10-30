@@ -15,7 +15,7 @@ main = Executable.new { |t|
 }
 
 desc 'Build testable application'
-multitask(default: Names[main])
+multitask(default: Names::All[main])
 
 task(:clean) {
   [ 'lib', 'bin', RakeBuilder.outDir ].each { |fn|

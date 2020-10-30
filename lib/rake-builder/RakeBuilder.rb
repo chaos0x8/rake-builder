@@ -15,6 +15,8 @@ module RakeBuilder
 
   module_accessor gpp: 'g++', ar: 'ar'
   module_accessor outDir: '.obj'
+  module_accessor verbose: true
+  module_accessor silent: false
 
   module Desc
     def self.extended cls

@@ -16,7 +16,9 @@ class Library < RakeBuilder::Target
       desc @description if @description
       file(@name => Names[dir, @requirements, @sources, cl]) {
         FileUtils.rm @name, verbose: true if File.exist?(@name)
-        C8.sh RakeBuilder::ar, 'vsr', @name, *Build[@sources], verbose: true
+        C8.sh RakeBuilder::ar, 'vsr', @name, *Build[@sources],
+              verbose: RakeBuilder.verbose, silent: RakeBuilder.silent,
+              nonVerboseMessage: "#{RakeBuilder::ar} #{@name}"
       }
     end
   end

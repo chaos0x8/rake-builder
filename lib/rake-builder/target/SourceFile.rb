@@ -20,13 +20,16 @@ class SourceFile < RakeBuilder::Target
     dir = Names[Directory.new(to_obj(@name))]
     file(to_mf(@name) => Names[dir, @requirements, readMf(to_mf(@name)), @name]) {
       C8.sh RakeBuilder::gpp, *Build[@flags], *Build[@includes],
-            '-c', @name, '-M', '-MM', '-MF', to_mf(@name), verbose: true
+            '-c', @name, '-M', '-MM', '-MF', to_mf(@name),
+            verbose: RakeBuilder.verbose, silent: RakeBuilder.silent
     }
 
     desc @description if @description
     file(to_obj(@name) => Names[dir, @requirements, to_mf(@name), @name]) {
       C8.sh RakeBuilder::gpp, *Build[@flags], *Build[@includes],
-            '-c', @name, '-o', to_obj(@name), verbose: true
+            '-c', @name, '-o', to_obj(@name),
+            verbose: RakeBuilder.verbose, silent: RakeBuilder.silent,
+            nonVerboseMessage: "#{RakeBuilder.gpp} #{@name}"
     }
   end
 

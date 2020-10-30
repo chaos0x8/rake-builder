@@ -4,5 +4,5 @@ namespace(:install) {
     t.pkgs << 'ruby-dev'
   }
 
-  C8.task(default: Names[install])
+  C8.phony(default: Names[install])
 }

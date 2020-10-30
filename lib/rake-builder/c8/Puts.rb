@@ -6,4 +6,10 @@ module C8
       $stdout.puts *args
     }
   end
+
+  def self.print *args
+    @@mutex.synchronize {
+      $stdout.print *args
+    }
+  end
 end
