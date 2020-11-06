@@ -2,6 +2,8 @@ autoload :Open3, 'open3'
 
 require_relative 'Puts'
 
+require 'pty'
+
 module C8
   def self.sh *args, verbose: false, silent: false, nonVerboseMessage: nil, **opts
     if verbose
@@ -13,8 +15,23 @@ module C8
     st = nil
 
     if silent
-      out, st = Open3.capture2e(*args, opts)
-      C8.print out if st.exitstatus != 0
+      PTY.spawn(*args, opts) { |r, w, pid|
+        lines = Enumerator.new { |e|
+          begin
+            r.each_line { |line|
+              e << line
+            }
+          rescue Errno::EIO
+            nil
+          end
+        }
+
+        _, st = Process.wait2(pid)
+
+        if st.exitstatus != 0
+          C8.print(lines.to_a.join)
+        end
+      }
     else
       pid, st = Process.wait2(Process.spawn(*args, opts))
     end
