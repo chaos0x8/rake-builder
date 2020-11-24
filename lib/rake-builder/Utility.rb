@@ -46,5 +46,11 @@ module RakeBuilder
         raise RakeBuilder::AttributeAltError.new(*attributes)
       end
     end
+
+    def required_val attribute, &check
+      if value = instance_variable_get(:"@#{attribute}") and not check.call(value)
+        raise AttributeValueError(attribute)
+      end
+    end
   end
 end

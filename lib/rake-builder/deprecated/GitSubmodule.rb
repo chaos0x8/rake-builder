@@ -1,5 +1,6 @@
-require_relative 'RakeBuilder'
-require_relative 'Transform'
+require_relative '../RakeBuilder'
+require_relative '../Transform'
+require_relative 'Deprecated'
 
 class GitSubmodule
   include RakeBuilder::Utility
@@ -10,6 +11,8 @@ class GitSubmodule
   attr_reader :libs
 
   def initialize(name: nil, libs: [])
+    Deprecated.deprecated GitSubmodule: :ExternalProject
+
     extend RakeBuilder::Desc
 
     @name = name

@@ -6,16 +6,17 @@ class ExternalProject
   include RakeBuilder::Transform
   include Rake::DSL
 
-  attr_accessor :name, :git, :wget, :build, :rakefile, :noRebuild
+  attr_accessor :name, :git, :wget, :submodule, :build, :rakefile, :noRebuild
   attr_reader :libs, :includes, :rakeTasks
 
-  def initialize(name: nil, git: nil, wget: nil, rakefile: nil, libs: nil, includes: nil, description: nil, rakeTasks: nil)
+  def initialize(name: nil, git: nil, wget: nil, submodule: nil, rakefile: nil, libs: nil, includes: nil, description: nil, rakeTasks: nil)
     extend RakeBuilder::Desc
 
     @name = name
     @description = description
     @git = git
     @wget = wget
+    @submodule = submodule
     @rakefile = rakefile
     @noRebuild = false
     @libs = RakeBuilder::ArrayWrapper.new(libs)
@@ -26,10 +27,14 @@ class ExternalProject
 
     required(:name)
     required_alt(:rakefile, :rakeTasks)
-    required_alt(:git, :wget)
+    required_alt(:git, :wget, :submodule)
+    required_val(:submodule) { |val|
+      val != @name
+    }
 
     @outputDir = cloneTask(@git) if @git
     @outputDir = downloadTask(@wget) if @wget
+    @outputDir = submoduleInit(@submodule) if @submodule
 
     if @rakefile
       C8.task(@name => @outputDir) {
@@ -44,7 +49,7 @@ class ExternalProject
     end
   end
 
-  def findLibs *libs
+  def findLibs *libs, enum: nil
     libs.collect { |fn|
       r = retryOnce(proc {
         Dir[File.join(@outputDir, '**', fn)].first
@@ -52,15 +57,17 @@ class ExternalProject
         invoke
       }, error: "failed to find #{fn}")
 
+      enum << r if enum
+
+      lib = File.basename(r)
+      lib.slice!('lib')
+      lib.chomp!(File.extname(r))
+
       case File.extname(fn)
       when '.so'
-        lib = File.basename(r)
-        lib.slice!('lib')
-        lib.chomp!(File.extname(r))
-
         ["-Wl,-rpath=#{File.dirname(r)}", "-L#{File.dirname(r)}", "-l#{lib}"]
       when '.a'
-        r
+        ["-L#{File.dirname(r)}", "-l#{lib}"]
       else
         raise "Unsupported extension: #{File.extname(fn)}"
       end
@@ -78,11 +85,14 @@ class ExternalProject
   end
 
   def >> target
-    @findLibs ||= findLibs(*@libs)
+    e = Array.new
+
+    @findLibs ||= findLibs(*@libs, enum: e)
     @findIncludes ||= findIncludes(*@includes)
 
     target.libs << @findLibs
     target.includes << @findIncludes
+    target.requirements << e
     target.requirements << @name unless @noRebuild
 
     self
@@ -93,7 +103,6 @@ class ExternalProject
   end
 
 private
-
   def cloneTask url
     outputDir = File.join(RakeBuilder.outDir, File.basename(url).chomp('.git'))
 
@@ -111,8 +120,8 @@ private
         outputDir = File.join(RakeBuilder.outDir, File.basename(url).chomp(ext))
         file(outputDir => Names[Directory.new(RakeBuilder.outDir)]) {
           begin
-            sh 'wget', url, '-O', archive
-            sh 'tar', '-C', File.dirname(archive), tar_options, archive
+            C8.sh 'wget', url, '-O', archive
+            C8.sh 'tar', '-C', File.dirname(archive), tar_options, archive
           ensure
             FileUtils.rm archive if File.exist? archive
           end
@@ -123,6 +132,15 @@ private
     }
 
     return nil
+  end
+
+  def submoduleInit submodule
+    file(submodule) {
+      C8.sh 'git', 'submodule', 'init', verbose: true
+      C8.sh 'git', 'submodule', 'update', verbose: true
+    }
+
+    submodule
   end
 
   def retryOnce block, error:, recover: nil

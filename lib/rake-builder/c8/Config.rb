@@ -9,20 +9,26 @@ module C8
     @@task_defined = false
 
     def self.has_key? key
-      data = data_ || {}
+      data = data_
       data.has_key?(key.to_s)
     end
 
     def self.[] key
-      data = data_ || {}
+      data = data_
       data[key.to_s]
     end
 
     def self.[]= key, value
-      data = data_ || {}
+      data = data_
       data[key.to_s] = value
-      FileUtils.mkdir_p File.dirname(filename_), verbose: true unless File.directory?(File.dirname(filename_))
-      IO.write(filename_, JSON.pretty_generate(data))
+      json = JSON.pretty_generate(data)
+      if not File.exist?(filename_) or IO.read(filename_) != json
+        if dir = File.dirname(filename_) and not File.directory?(dir)
+          FileUtils.mkdir_p dir, verbose: true
+        end
+
+        IO.write(filename_, json)
+      end
       value
     end
 
@@ -42,8 +48,12 @@ module C8
 
     def self._names_
       unless @@task_defined
-        file(filename_) {
-          IO.write(filename_, JSON.pretty_generate(data_ || {}))
+        file(filename_) { |t|
+          if File.exist?(t.name)
+            FileUtils.touch t.name
+          else
+            IO.write(filename_, JSON.pretty_generate({}))
+          end
         }
         @@task_defined = true
       end
@@ -55,6 +65,8 @@ module C8
     def self.data_
       if File.exist?(filename_)
         JSON.parse(IO.read(filename_))
+      else
+        Hash.new
       end
     end
 

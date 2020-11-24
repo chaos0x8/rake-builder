@@ -23,6 +23,12 @@ module RakeBuilder
     end
   end
 
+  class AttributeValueError < RakeBuilder::Error
+    def initialize attribute
+      super("Attribute #{attribute} has incorrect value")
+    end
+  end
+
   class MissingPkg < RakeBuilder::Error
     def initialize pkg
       super("Missing pkg '#{pkg}'")
