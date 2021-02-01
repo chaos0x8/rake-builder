@@ -8,6 +8,7 @@ module RakeBuilder
     def_delegators :@op, :on, :on_head, :on_tail, :to_s, :help, :banner, :banner=, :separator
 
     def initialize
+      Deprecated.deprecated 'RakeBuilder::OptionParser' => 'task(:option, [:value])'
       @op = ::OptionParser.new
       yield self if block_given?
     end
