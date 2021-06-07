@@ -21,7 +21,6 @@ require_relative 'rake-builder/Transform.rb'
 require_relative 'rake-builder/Utility.rb'
 require_relative 'rake-builder/array-wrapper.rb'
 require_relative 'rake-builder/c8.rb'
-require_relative 'rake-builder/deprecated.rb'
 require_relative 'rake-builder/generate.rb'
 require_relative 'rake-builder/target.rb'
 

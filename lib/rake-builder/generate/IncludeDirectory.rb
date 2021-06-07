@@ -1,7 +1,14 @@
 require_relative '../target/GeneratedFile'
 require_relative '../Transform'
 require_relative '../c8/Erb'
-require_relative '../c8/Data'
+
+TEMPLATE_INCLUDE_DIRECTORY = <<INLINE
+#pragma once
+
+<%- @includes.each { |inc| -%>
+#include "<%= File.join(@dir, File.basename(inc)) %>"
+<%- } -%>
+INLINE
 
 module Generate
   extend RakeBuilder::Transform
@@ -18,16 +25,9 @@ module Generate
         $stdout.puts "Generating '#{t.name}'..."
 
         File.open(t.name, 'w') { |f|
-          C8.erb C8.data(__FILE__).data, dir: File.basename(dirName), includes: t.tracked
+          C8.erb TEMPLATE_INCLUDE_DIRECTORY, dir: File.basename(dirName), includes: t.tracked
         }
       }
     }
   end
 end
-
-__END__
-#pragma once
-
-<%- @includes.each { |inc| -%>
-#include "<%= File.join(@dir, File.basename(inc)) %>"
-<%- } -%>

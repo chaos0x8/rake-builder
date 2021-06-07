@@ -5,10 +5,6 @@ Bundler.require(:default, :test)
 
 require_relative '../lib/rake-builder'
 
-RSpec.configure do |config|
-  config.mock_with :mocha
-end
-
 describe(SharedSources) {
   subject {
     SharedSources.new { |t|
@@ -16,7 +12,9 @@ describe(SharedSources) {
     }
   }
 
-  let(:targetMock) { mock('target') }
+  let(:targetMock) {
+    double('target')
+  }
 
   TAGS = [:sources, :libs, :flags, :includes, :pkgs, :requirements]
   TAGS.each { |tag|
@@ -24,11 +22,13 @@ describe(SharedSources) {
       should respond_to(tag)
     }
   }
+
   it("streams #{TAGS.join(', ')}") {
     TAGS.each { |tag|
-      field = mock(tag.to_s)
-      targetMock.expects(tag).returns(field)
-      field.expects(:<<).with(anything)
+      field = double(tag.to_s)
+
+      allow(targetMock).to receive(tag).and_return(field)
+      expect(field).to receive(:<<)
     }
 
     subject >> targetMock
@@ -37,9 +37,10 @@ describe(SharedSources) {
   [[:sources], [:flags, :libs], [:includes, :pkgs]].each_with_index { |tags, index|
     it("slices stream tags/#{index}") {
       tags.each { |tag|
-        field = mock(tag.to_s)
-        targetMock.expects(tag).returns(field)
-        field.expects(:<<).with(anything)
+        field = double(tag.to_s)
+
+        allow(targetMock).to receive(tag).and_return(field)
+        expect(field).to receive(:<<)
       }
 
       subject.slice(*tags) >> targetMock
