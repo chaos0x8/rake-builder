@@ -7,6 +7,15 @@ module C8
     extend Rake::DSL
 
     @@task_defined = false
+    @@filename = File.join(RakeBuilder.outDir, 'config.json')
+
+    def self.filename= value
+      @@filename = value
+    end
+
+    def self.filename
+      @@filename
+    end
 
     def self.has_key? key
       data = data_
@@ -22,12 +31,12 @@ module C8
       data = data_
       data[key.to_s] = value
       json = JSON.pretty_generate(data)
-      if not File.exist?(filename_) or IO.read(filename_) != json
-        if dir = File.dirname(filename_) and not File.directory?(dir)
+      if not File.exist?(@@filename) or IO.read(@@filename) != json
+        if dir = File.dirname(@@filename) and not File.directory?(dir)
           FileUtils.mkdir_p dir, verbose: true
         end
 
-        IO.write(filename_, json)
+        IO.write(@@filename, json)
       end
       value
     end
@@ -48,30 +57,26 @@ module C8
 
     def self._names_
       unless @@task_defined
-        file(filename_) { |t|
+        file(@@filename) { |t|
           if File.exist?(t.name)
             FileUtils.touch t.name
           else
-            IO.write(filename_, JSON.pretty_generate({}))
+            IO.write(@@filename, JSON.pretty_generate({}))
           end
         }
         @@task_defined = true
       end
 
-      filename_
+      @@filename
     end
 
   private
     def self.data_
-      if File.exist?(filename_)
-        JSON.parse(IO.read(filename_))
+      if File.exist?(@@filename)
+        JSON.parse(IO.read(@@filename))
       else
         Hash.new
       end
-    end
-
-    def self.filename_
-      File.join(RakeBuilder.outDir, 'config.json')
     end
   end
 end
