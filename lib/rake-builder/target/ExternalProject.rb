@@ -7,9 +7,10 @@ class ExternalProject
   include Rake::DSL
 
   attr_accessor :name, :git, :wget, :submodule, :build, :rakefile, :noRebuild
-  attr_reader :libs, :includes, :rakeTasks
+  attr_writer :outDir
+  attr_reader :libs, :includes, :rakeTasks, :path
 
-  def initialize(name: nil, git: nil, wget: nil, submodule: nil, rakefile: nil, libs: nil, includes: nil, description: nil, rakeTasks: nil)
+  def initialize(name: nil, git: nil, wget: nil, submodule: nil, rakefile: nil, libs: nil, includes: nil, description: nil, rakeTasks: nil, outDir: nil)
     extend RakeBuilder::Desc
 
     @name = name
@@ -19,6 +20,7 @@ class ExternalProject
     @submodule = submodule
     @rakefile = rakefile
     @noRebuild = false
+    @outDir = outDir
     @libs = RakeBuilder::ArrayWrapper.new(libs)
     @includes = RakeBuilder::ArrayWrapper.new(includes)
     @rakeTasks = RakeBuilder::ArrayWrapper.new(rakeTasks)
@@ -32,27 +34,31 @@ class ExternalProject
       val != @name
     }
 
-    @outputDir = cloneTask(@git) if @git
-    @outputDir = downloadTask(@wget) if @wget
-    @outputDir = submoduleInit(@submodule) if @submodule
+    @path = cloneTask(@git) if @git
+    @path = downloadTask(@wget) if @wget
+    @path = submoduleInit(@submodule) if @submodule
 
     if @rakefile
-      C8.task(@name => @outputDir) {
-        C8.sh "cd #{Shellwords.escape(@outputDir)} && rake -f #{Shellwords.escape(File.expand_path(@rakefile))} --rakelib /dev/null", verbose: true
+      C8.task(@name => @path) {
+        C8.sh "cd #{Shellwords.escape(@path)} && rake -f #{Shellwords.escape(File.expand_path(@rakefile))} --rakelib /dev/null", verbose: true
       }
     end
 
     if @rakeTasks.size > 0
-      C8.task(@name => @outputDir) {
-        C8.sh "cd #{Shellwords.escape(@outputDir)} && rake #{@rakeTasks.to_a.join(' ')}", verbose: true
+      C8.task(@name => @path) {
+        C8.sh "cd #{Shellwords.escape(@path)} && rake #{@rakeTasks.to_a.join(' ')}", verbose: true
       }
     end
+  end
+
+  def outDir
+    @outDir || RakeBuilder.outDir
   end
 
   def findLibs *libs, enum: nil
     libs.collect { |fn|
       r = retryOnce(proc {
-        Dir[File.join(@outputDir, '**', fn)].first
+        Dir[File.join(@path, '**', fn)].first
       }, recover: proc {
         invoke
       }, error: "failed to find #{fn}")
@@ -77,7 +83,7 @@ class ExternalProject
   def findIncludes *includes
     includes.collect { |fn|
       retryOnce(proc {
-        Dir[File.join(@outputDir, '**', fn)].collect { |r| r.chomp(fn) }.first
+        Dir[File.join(@path, '**', fn)].collect { |r| r.chomp(fn) }.first
       }, recover: proc {
         invoke
       }, error: "failed to find #{fn}")
@@ -104,21 +110,21 @@ class ExternalProject
 
 private
   def cloneTask url
-    outputDir = File.join(RakeBuilder.outDir, File.basename(url).chomp('.git'))
+    path = File.join(outDir, File.basename(url).chomp('.git'))
 
-    file(outputDir => Names[Directory.new(RakeBuilder.outDir)]) {
-      C8.sh 'git', 'clone', url, outputDir
+    file(path => Names[Directory.new(outDir)]) {
+      C8.sh 'git', 'clone', url, path
     }
 
-    outputDir
+    path
   end
 
   def downloadTask url
     [{ ext: '.tar.gz', tar_options: '-xzf' }].each { |ext:, tar_options:|
       if url.match(/#{Regexp.quote(ext)}$/)
-        archive = File.join(RakeBuilder.outDir, File.basename(url))
-        outputDir = File.join(RakeBuilder.outDir, File.basename(url).chomp(ext))
-        file(outputDir => Names[Directory.new(RakeBuilder.outDir)]) {
+        archive = File.join(outDir, File.basename(url))
+        path = File.join(outDir, File.basename(url).chomp(ext))
+        file(path => Names[Directory.new(outDir)]) {
           begin
             C8.sh 'wget', url, '-O', archive
             C8.sh 'tar', '-C', File.dirname(archive), tar_options, archive
@@ -127,7 +133,7 @@ private
           end
         }
 
-        return outputDir
+        return path
       end
     }
 
