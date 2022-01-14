@@ -107,7 +107,9 @@ class TestRakeGenerateBash < Test::Unit::TestCase
 
     [{ name: :variable, prefix: '' },
      { name: :export, prefix: 'export' },
-     { name: :local, prefix: 'local' }].each { |name:, prefix:|
+     { name: :local, prefix: 'local' }].each { |hash|
+      hash => {name:, prefix:}
+
       should("add #{name}") {
         content = Generate.bash {
           send(name, 'v1' => '10', 'v2' => 15)
