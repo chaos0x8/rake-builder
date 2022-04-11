@@ -1,9 +1,10 @@
-require_relative '../RakeInstaller'
 require_relative '../c8/Task'
+require_relative '../c8/Install'
 
 class InstallPkg
   include RakeBuilder::Utility
   include Rake::DSL
+  include C8::Install
 
   attr_accessor :name, :description
   attr_reader :pkgs
@@ -20,13 +21,9 @@ class InstallPkg
     required(:name)
 
     desc @description if @description
-    C8.phony(@name) {
-      pkgs = @pkgs.each.reject { |pkg|
-        RakeBuilder::isPkgInstalled?(pkg)
-      }
-
-      RakeBuilder::installPkgs *pkgs, verbose: true
-    }
+    C8.phony(@name) do
+      apt_install(*pkgs)
+    end
   end
 
   def _names_
@@ -34,3 +31,12 @@ class InstallPkg
   end
 end
 
+def require_pkg(pkg)
+  klass = Class.new do
+    include C8::Install
+  end
+
+  klass.new.apt_install pkg
+
+  nil
+end
