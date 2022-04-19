@@ -8,21 +8,75 @@ module C8
     include Rake::DSL
     include C8::Install
 
+    @commands = []
+
+    def self.command(name, aggregate: false, &block)
+      define_method(name) do |*args, **opts|
+        instance_variable_get(:"@#{name}") << [args, opts]
+      end
+
+      if aggregate
+        define_method(:"do_#{name}") do
+          args, opts = instance_variable_get(:"@#{name}").each_with_object([[], {}]) do |item, sum|
+            sum[0] += item[0]
+            sum[1].merge!(item[1])
+          end
+
+          instance_exec(*args, **opts, &block)
+        end
+      else
+        define_method(:"do_#{name}") do
+          instance_variable_get(:"@#{name}").each do |args, opts|
+            instance_exec(*args, **opts, &block)
+          end
+        end
+      end
+
+      @commands << name
+    end
+
+    command :rm do |path|
+      path = to_pathname(path)
+
+      if path.directory?
+        FileUtils.rm_rf path, verbose: true
+      elsif path.exist?
+        FileUtils.rm path, verbose: true
+      end
+    end
+
+    command :apt_install, aggregate: true do |pkgs|
+      method(:apt_install).super_method.call(*pkgs)
+    end
+
+    command :apt_remove, aggregate: true do |pkgs|
+      method(:apt_remove).super_method.call(*pkgs)
+    end
+
+    command :gem_install, aggregate: true do |pkgs|
+      method(:gem_install).super_method.call(*pkgs)
+    end
+
+    command :gem_uninstall, aggregate: true do |pkgs|
+      method(:gem_uninstall).super_method.call(*pkgs)
+    end
+
     def initialize(name, type: :task, &block)
       @mkdir = []
       @dependencies = []
-      @rm = []
-      @apt_install = []
-      @gem_install = []
       @desc = nil
+
+      self.class.instance_variable_get(:@commands).each do |cmd|
+        instance_variable_set(:"@#{cmd}", [])
+      end
 
       instance_eval(&block)
 
       method(:desc).super_method.call @desc if @desc
       C8.send(type, name => @dependencies.collect(&:to_s)) do
-        do_rm
-        do_apt_install
-        do_gem_install
+        self.class.instance_variable_get(:@commands).each do |cmd|
+          send(:"do_#{cmd}")
+        end
       end
     end
 
@@ -59,37 +113,7 @@ module C8
       @dependencies << dst
     end
 
-    def rm(path)
-      @rm << to_pathname(path)
-    end
-
-    def apt_install(pkg)
-      @apt_install << pkg
-    end
-
-    def gem_install(pkg)
-      @gem_install << pkg
-    end
-
     private
-
-    def do_rm
-      @rm.each do |path|
-        if path.directory?
-          FileUtils.rm_rf path, verbose: true
-        elsif path.exist?
-          FileUtils.rm path, verbose: true
-        end
-      end
-    end
-
-    def do_apt_install
-      method(:apt_install).super_method.call(*@apt_install)
-    end
-
-    def do_gem_install
-      method(:gem_install).super_method.call(*@gem_install)
-    end
 
     def to_pathname(o)
       o.is_a?(Pathname) ? o : Pathname.new(o)
