@@ -1,38 +1,38 @@
-gem 'rake-builder'
+ gem 'rake-builder'
 
-autoload :FileUtils, 'fileutils'
+ autoload :FileUtils, 'fileutils'
 
-require 'rake-builder'
+ require 'rake-builder'
 
-install = InstallPkg.new(name: :install, pkgs: ['ruby-dev'])
+ p = C8.project 'install-pkg' do |p|
+   p.build_dir = '.obj'
+   p.flags << %w[--std=c++0x -ISource]
 
-libs = []
+   t = p.phony :install_pkgs do
+     desc 'Installs preconditions'
+     apt_install 'ruby-dev'
+   end
 
-libs << Library.new do |t|
-  t.name = 'lib/libmain.a'
-  t.requirements << install
-  t.sources << Dir['Source/*.cpp'] - ['Source/main.cpp']
-  t.includes << ['Source']
-  t.flags << ['--std=c++0x']
-  t.pkgs << ['ruby']
-  t.description = 'Build testable library'
-end
+   p.executable 'bin/main' do |_t|
+     desc 'Build application'
+     flags << %w[-lpthread]
+     sources << Dir['Source/main.cpp']
+   end
 
-main = Executable.new do |t|
-  t.name = 'bin/main'
-  t.requirements << install
-  t.sources << Dir['Source/main.cpp']
-  t.includes << ['Source']
-  t.flags << ['--std=c++0x']
-  t.libs << ['-lpthread', libs]
-  t.pkgs << ['ruby']
-  t.description = 'Build testable application'
-end
+   p.library 'lib/libmain.a' do |_t|
+     desc 'Build library'
+     sources << Dir['Source/*.cpp'] - Dir['Source/main.cpp']
+   end
+ end
 
-multitask(default: Names[main])
+ C8.target default: 'install-pkg' do
+   desc 'Builds and executes binary'
+   sh 'bin/main'
+ end
 
-C8.target :clean do
-  ['lib', 'bin', RakeBuilder.outDir].each do |path|
-    rm path
-  end
-end
+ C8.target :clean do
+   desc 'Clean output files'
+   p.dependencies.each do |path|
+     rm path
+   end
+ end

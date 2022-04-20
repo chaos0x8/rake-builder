@@ -3,21 +3,26 @@ gem 'rake-builder'
 autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
+require 'pathname'
 
-app = Executable.new { |t|
-  t.name = File.basename(File.dirname(__FILE__))
-  t.sources << FileList['*.cpp']
-  t.flags << ['--std=c++17']
-}
+project_name = Pathname.new(__FILE__).dirname.basename.to_s
 
-multitask(default: Names[app])
+p = C8.project 'demo' do |_p|
+  flags << %w[-std=c++17]
 
-task(:clean) {
-  [RakeBuilder.outDir, app.name].each { |fn|
-    if File.directory?(fn)
-      FileUtils.rm_rf fn, verbose: true
-    elsif File.exist?(fn)
-      FileUtils.rm fn, verbose: true
-    end
-  }
-}
+  executable project_name do
+    desc 'Builds application'
+    sources << Dir['*.cpp']
+  end
+end
+
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh "./#{project_name}"
+end
+
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

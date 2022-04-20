@@ -17,9 +17,8 @@ module C8
 
       if aggregate
         define_method(:"do_#{name}") do
-          args, opts = instance_variable_get(:"@#{name}").each_with_object([[], {}]) do |item, sum|
-            sum[0] += item[0]
-            sum[1].merge!(item[1])
+          args, opts = instance_variable_get(:"@#{name}").reduce([[], {}]) do |sum, item|
+            [sum[0] + item[0], sum[1].merge(item[1])]
           end
 
           instance_exec(*args, **opts, &block)
@@ -45,25 +44,31 @@ module C8
       end
     end
 
-    command :apt_install, aggregate: true do |pkgs|
+    command :apt_install, aggregate: true do |*pkgs|
       method(:apt_install).super_method.call(*pkgs)
     end
 
-    command :apt_remove, aggregate: true do |pkgs|
+    command :apt_remove, aggregate: true do |*pkgs|
       method(:apt_remove).super_method.call(*pkgs)
     end
 
-    command :gem_install, aggregate: true do |pkgs|
+    command :gem_install, aggregate: true do |*pkgs|
       method(:gem_install).super_method.call(*pkgs)
     end
 
-    command :gem_uninstall, aggregate: true do |pkgs|
+    command :gem_uninstall, aggregate: true do |*pkgs|
       method(:gem_uninstall).super_method.call(*pkgs)
     end
 
-    def initialize(name, type: :task, &block)
+    command :sh do |*args, **opts|
+      method(:sh).super_method.call(*args, **opts)
+    end
+
+    def initialize(name = nil, type: :task, **opts, &block)
+      name ||= opts.to_a.dig(0, 0)
+
       @mkdir = []
-      @dependencies = []
+      @dependencies = [opts.to_a.dig(0, 1)].flatten.compact
       @desc = nil
 
       self.class.instance_variable_get(:@commands).each do |cmd|
