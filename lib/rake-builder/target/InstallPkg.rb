@@ -1,5 +1,5 @@
-require_relative '../c8/Task'
-require_relative '../c8/Install'
+require_relative '../c8/task'
+require_relative '../c8/install'
 
 class InstallPkg
   include RakeBuilder::Utility

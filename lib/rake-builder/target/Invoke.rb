@@ -1,4 +1,4 @@
-require_relative '../c8/Task'
+require_relative '../c8/task'
 require_relative '../array-wrapper/Requirements'
 require_relative '../Utility'
 
@@ -21,16 +21,14 @@ class Invoke
     required(:name)
 
     desc @description if @description
-    C8.phony(@name) {
-      Names[@requirements].each { |req|
+    C8.phony(@name) do
+      Names[@requirements].each do |req|
         Rake::Task[req].invoke
-      }
-    }
+      end
+    end
   end
 
   def _names_
     @name
   end
 end
-
-

@@ -4,56 +4,31 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-install = InstallPkg.new(name: :install, pkgs: ['ruby-dev'])
+p = C8.project 'demo' do
+  flags << %w[--std=c++17 -ISource]
 
-sources = SharedSources.new { |t|
-  t.sources << Dir['Source/*.cpp'] - ['Source/main.cpp']
-  t.flags << ['--std=c++17']
-  t.includes << ['Source']
-  t.pkgs << ['ruby']
-  t.requirements << install
-}
+  phony 'install_pkgs' do
+    apt_install 'ruby-dev'
+  end
 
-main = SharedSources.new { |t|
-  t.sources << 'Source/main.cpp'
-  t.flags << ['--std=c++17']
-  t.includes << ['Source']
-  t.pkgs << ['ruby']
-  t.requirements << install
-}
+  executable 'bin/main' do
+    sources << Dir['Source/*.cpp']
+  end
 
-lib = Library.new { |t|
-  t.name = 'lib/libmain.a'
-  t.desc = 'Build testable library'
+  executable 'bin/main2' do
+    sources << Dir['Source/*.cpp']
+  end
+end
 
-  sources.slice(:sources, :flags, :pkgs, :includes) >> t
-}
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+  sh 'bin/main2'
+end
 
-app = Executable.new { |t|
-  t.name = 'bin/main'
-  t.sources << main
-  t.libs << ['-lpthread', lib]
-  t.pkgs << ['ruby']
-  t.desc = 'Build testable application'
-}
-
-app_without_lib = Executable.new { |t|
-  t.name = 'bin/main_without_lib'
-  t.libs << ['-lpthread']
-  t.desc = 'Build testable application'
-
-  main.slice(:sources, :pkgs) >> t
-  sources >> t
-}
-
-multitask(default: Names[app, app_without_lib])
-
-task(:clean) {
-  [ 'lib', 'bin', RakeBuilder.outDir ].each { |fn|
-    if File.directory?(fn)
-      FileUtils.rm_rf fn, verbose: true
-    elsif File.exist?(fn)
-      FileUtils.rm fn, verbose: true
-    end
-  }
-}
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

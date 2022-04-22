@@ -1,4 +1,4 @@
-require_relative '../lib/rake-builder/c8/Erb'
+require_relative '../lib/rake-builder/c8/erb'
 
 TEMPLATE_RAKEFILE = <<INLINE
 gem 'rake-builder'

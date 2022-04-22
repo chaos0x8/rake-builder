@@ -2,30 +2,26 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-enum = GeneratedFile.new(format: true) { |t|
-  t.name = 'src/enum.hpp'
-  t.requirements << 'src/enum.hpp.erb'
-  t.code = proc {
-    C8.erb(IO.read('src/enum.hpp.erb'), names: ['a', 'b', 'c'])
-  }
-}
+p = C8.project 'demo' do
+  flags << %w[-Isrc --std=c++17]
 
-main = Executable.new { |t|
-  t.name = 'bin/main'
-  t.requirements << enum
-  t.sources << FileList['src/**/*.cpp']
-  t.includes << 'src'
-  t.flags << '--std=c++17'
-}
+  file_generated 'src/enum.hpp' => 'src/enum.hpp.erb' do
+    C8.erb(IO.read('src/enum.hpp.erb'), names: %w[a b c])
+  end
 
-task(default: Names[main])
+  executable 'bin/main' do
+    sources << Dir['src/**/*.cpp']
+  end
+end
 
-task(:clean) {
-  [RakeBuilder.outDir, 'lib', 'bin', *Names[enum]].each { |fn|
-    if File.directory?(fn)
-      FileUtils.rm_rf fn, verbose: true
-    elsif File.exist?(fn)
-      FileUtils.rm fn, verbose: true
-    end
-  }
-}
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+end
+
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

@@ -1,7 +1,7 @@
 require 'rake'
 require 'pathname'
 
-require_relative 'Install'
+require_relative 'install'
 
 module C8
   class Target

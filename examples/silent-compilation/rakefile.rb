@@ -2,24 +2,25 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-RakeBuilder.verbose = false
-RakeBuilder.silent = true
+p = C8.project 'demo' do |p|
+  p.verbose = false
+  p.silent = true
 
-main = Executable.new { |t|
-  t.name = 'bin/main'
-  t.sources << FileList['src/**/*.cpp']
-  t.includes << 'src'
-  t.flags << '--std=c++17'
-}
+  flags << %w[--std=c++17 -Isrc]
 
-task(default: Names[main])
+  executable 'bin/main' do
+    sources << Dir['src/**/*.cpp']
+  end
+end
 
-task(:clean) {
-  [RakeBuilder.outDir, 'lib', 'bin'].each { |fn|
-    if File.directory?(fn)
-      FileUtils.rm_rf fn, verbose: true
-    elsif File.exist?(fn)
-      FileUtils.rm fn, verbose: true
-    end
-  }
-}
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+end
+
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

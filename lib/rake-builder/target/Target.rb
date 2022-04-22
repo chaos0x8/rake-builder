@@ -1,7 +1,7 @@
 require_relative '../Utility'
 require_relative '../Transform'
 require_relative '../array-wrapper/Track'
-require_relative '../c8/Sh'
+require_relative '../c8/sh'
 
 module RakeBuilder
   class Target
@@ -30,13 +30,13 @@ module RakeBuilder
       track :sources
     end
 
-    def << target
+    def <<(target)
       target >> self
       self
     end
 
     def _names_
-      [ @name, @sources ]
+      [@name, @sources]
     end
   end
 end

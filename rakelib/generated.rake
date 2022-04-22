@@ -1,5 +1,5 @@
 require_relative '../lib/rake-builder/target/GeneratedFile'
-require_relative '../lib/rake-builder/c8/Task'
+require_relative '../lib/rake-builder/c8/task'
 
 namespace(:generated) {
   generated = Dir['lib/rake-builder/*'].select { |dir|

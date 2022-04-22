@@ -1,3 +1,5 @@
 #pragma once
 
-enum class Enumerable { a, b, c };
+enum class Enumerable {
+  a,b,c
+};

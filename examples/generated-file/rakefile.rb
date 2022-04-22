@@ -4,62 +4,49 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-hello_hpp = GeneratedFile.new { |t|
-  t.name = 'src/hello.hpp'
-  t.requirements << 'rakefile.rb'
-  t.action = proc { |fn|
-    c = [ '#pragma once',
-          '',
-          'void hello();' ]
-    IO.write(fn, c.join("\n"))
-  }
-}
+p = C8.project 'demo' do
+  file_generated 'src/hello.hpp' => __FILE__ do
+    <<~INLINE
+      #pragma once
 
-hello_cpp = GeneratedFile.new(format: true) { |t|
-  t.name = 'src/hello.cpp'
-  t.requirements << 'rakefile.rb'
-  t.code = proc {
-    [ '#include <iostream>',
-      '#include "hello.hpp"',
-      '',
-      'void hello() {',
-      '  std::cout << "Hello world!" << std::endl;',
-      '}']
-  }
-}
+      void hello();
+    INLINE
+  end
 
-main = GeneratedFile.new(format: true) { |t|
-  t.name = 'src/main.cpp'
-  t.requirements << 'rakefile.rb'
-  t.code = proc {
-    [ '#include "hello.hpp"',
-      '',
-      'int main() {',
-      'hello();',
-      '}']
-  }
-}
+  file_generated 'src/hello.cpp' => __FILE__ do
+    <<~INLINE
+      #include <iostream>
+      #include "hello.hpp"
 
-generate = Invoke.new { |t|
-  t.name = :generate
-  t.requirements << [main, hello_hpp, hello_cpp]
-}
+      void hello() {
+        std::cout << "Hello world!" << std::endl;
+      }
+    INLINE
+  end
 
-app = Executable.new { |t|
-  t.name = 'bin/app'
-  t.requirements << generate
-  t.sources << Names[main, hello_cpp]
-}
+  file_generated 'src/main.cpp' => __FILE__ do
+    <<~INLINE
+      #include "hello.hpp"
 
-multitask(default: Names[app])
+      int main() {
+        hello();
+      }
+    INLINE
+  end
 
-task(:clean) {
-  Names[RakeBuilder.outDir, 'bin', main, hello_hpp, hello_cpp].each { |fn|
-    if File.directory?(fn)
-      FileUtils.rm_rf fn, verbose: true
-    elsif File.exist?(fn)
-      FileUtils.rm fn, verbose: true
-    end
-  }
-}
+  executable 'bin/app' do
+    sources << %w[src/hello.cpp src/main.cpp]
+  end
+end
 
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/app'
+end
+
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end
