@@ -12,7 +12,7 @@ module C8
 
       def <<(value)
         case value
-        when Array
+        when Array, Container
           value.each do |v|
             self << v
           end

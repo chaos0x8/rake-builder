@@ -30,7 +30,7 @@ module C8
 
       def make_rule(project:)
         @products.each do |req|
-          found = Dir[path.join('**', req)].select do |fn|
+          found = path.glob(File.join('**', req)).select do |fn|
             fn.to_s =~ /#{Regexp.quote(req.to_s)}$/
           end
 
