@@ -9,7 +9,7 @@ module C8
   class Project
     include Rake::DSL
 
-    attr_reader :flags, :name, :dependencies, :preconditions
+    attr_reader :flags, :link_flags, :name, :dependencies, :preconditions
     attr_accessor :build_dir, :gpp, :ar, :verbose, :silent
 
     def initialize(name, &block)
@@ -22,6 +22,7 @@ module C8
       @name = name
       @desc = nil
       @flags = Flags.new
+      @link_flags = Flags.new
       @directory = []
       @dependencies = []
       @preconditions = []
@@ -67,6 +68,11 @@ module C8
 
     def desc(value)
       @desc = value
+    end
+
+    def pkg_config pkg
+      @flags << C8::Utility.pkg_config('--cflags', pkg)
+      @link_flags << C8::Utility.pkg_config('--libs', pkg)
     end
 
     def executable(name, &block)

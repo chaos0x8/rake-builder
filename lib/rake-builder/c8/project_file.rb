@@ -5,8 +5,9 @@ module C8
     class File
       attr_reader :path
 
-      def initialize(path)
+      def initialize(path, target:)
         @path = C8::Utility.to_pathname(path)
+        @target = target
       end
 
       def make_rule(project)
@@ -27,7 +28,7 @@ module C8
 
       def make_rule_mf(project, dirname, mf_path)
         project.file mf_path.to_s => [path.to_s, dirname.to_s, *project.preconditions] do |t|
-          C8.sh project.gpp, *project.flags,
+          C8.sh project.gpp, *project.flags, *@target.flags,
                 '-c', t.source, '-M', '-MM', '-MF', t.name,
                 verbose: project.verbose, silent: project.silent
         end

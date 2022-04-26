@@ -5,8 +5,9 @@ module C8
     class Sources
       include Enumerable
 
-      def initialize
+      def initialize(target:)
         @files = []
+        @target = target
       end
 
       def <<(value)
@@ -18,7 +19,7 @@ module C8
         when Source
           self << value
         else
-          @files << Source.new(value)
+          @files << Source.new(value, target: @target)
         end
       end
 

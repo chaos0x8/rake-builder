@@ -40,5 +40,11 @@ module C8
 
       dependencies.each(&block)
     end
+
+    def self.pkg_config option, pkg
+      o, s = Open3.capture2e('pkg-config', option, pkg)
+      raise RakeBuilder::MissingPkg, pkg unless s.exitstatus == 0
+      Shellwords.split(o)
+    end
   end
 end

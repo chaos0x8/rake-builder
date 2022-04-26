@@ -15,7 +15,7 @@ module C8
           w.close
 
           begin
-            C8.sh project.gpp, *project.flags,
+            C8.sh project.gpp, *project.flags, *@target.flags,
                   '-x', 'c++', '-c', '-', '-o', o_path.to_s, in: r,
                                                              verbose: project.verbose, silent: project.silent,
                                                              nonVerboseMessage: "#{project.gpp} #{t.source}"

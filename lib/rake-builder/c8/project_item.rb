@@ -10,7 +10,7 @@ module C8
       def initialize(path)
         @path = C8::Utility.to_pathname(path)
         @desc = nil
-        @sources = Sources.new
+        @sources = Sources.new(target: self)
         @flags = Flags.new
       end
 
