@@ -2,28 +2,26 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-main = Executable.new { |t|
-  t.name = 'bin/main'
-  t.requirements << :verify
-  t.sources << FileList['src/**/*.cpp']
-  t.includes << 'src'
-  t.flags << ['--std=c++17', '-Wall', '-Werror']
-}
+p = C8.project 'demo' do
+  flags << %w[--std=c++17 -Wall -Werror]
 
-headers = FileList['src/**/*.hpp'].collect { |fn|
-  HeaderFile.new { |t|
-    t.name = fn
-    t.flags << main.flags
-    t.includes << main.includes
-  }
-}
+  executable 'bin/main' do
+    sources << Dir['src/**/*.cpp']
+  end
 
-C8.task(:verify => Names[headers])
+  Dir['src/**/*.hpp'].each do |path|
+    header path
+  end
+end
 
-task(default: Names[main])
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+end
 
-task(:clean) {
-  ['lib', 'bin', RakeBuilder.outDir].each { |fn|
-    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
-  }
-}
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

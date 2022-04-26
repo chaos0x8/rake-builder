@@ -1,8 +1,9 @@
 require_relative 'target'
 require_relative 'utility'
-require_relative 'project_flags'
+require_relative 'project_containers'
 require_relative 'project_executable'
 require_relative 'project_library'
+require_relative 'project_templates'
 
 module C8
   class Project
@@ -27,16 +28,17 @@ module C8
       @to_generate = []
       @executable = []
       @library = []
+      @external = []
 
       instance_exec(self, &block)
 
       if @to_generate.size > 0
         @preconditions << "#{@name}_to_generate"
-        C8.phony "#{@name}_to_generate" do
-          @to_generate.each do |path|
-            Rake::Task[path].invoke
-          end
-        end
+        C8.multiphony "#{@name}_to_generate" => @to_generate
+      end
+
+      @external.each do |ext|
+        ext.make_rule(project: self)
       end
 
       @library.each do |lib|
@@ -46,6 +48,10 @@ module C8
       @executable.each do |exe|
         @library.each do |lib|
           exe.link lib
+        end
+
+        @external.each do |ext|
+          exe.link ext
         end
 
         exe.make_rule(project: self)
@@ -70,6 +76,7 @@ module C8
     end
 
     def test(name, &block)
+      warn 'test is deprecated use executable instead'
       Executable.new(name, &block).tap do |exe|
         @executable << exe
       end
@@ -81,9 +88,21 @@ module C8
       end
     end
 
+    def external(*args, &block)
+      External.new(*args, &block).tap do |ext|
+        @external << ext
+      end
+    end
+
     def phony(name, &block)
       @preconditions << name
       C8.target name, type: :phony, &block
+    end
+
+    def header(name)
+      Header.new(name).tap do |header|
+        @to_generate << header.make_rule(self)
+      end
     end
 
     def directory(path)
@@ -109,9 +128,18 @@ module C8
                   end
       end
 
+      cl_path = to_out(path, '.cl')
+      cl_dirname = cl_path.dirname
+
+      directory cl_dirname
+
+      file cl_path.to_s => [*sources, cl_dirname.to_s] do |t|
+        IO.write(t.name, sources.join("\n"))
+      end
+
       directory path.dirname
 
-      file path.to_s => [*sources, path.dirname.to_s, *preconditions] do |t|
+      file path.to_s => [cl_path.to_s, *C8::Utility.read_cl(cl_path), path.dirname.to_s, *preconditions] do |t|
         IO.write(t.name, block.call)
       end
 

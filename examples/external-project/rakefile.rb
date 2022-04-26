@@ -2,27 +2,32 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-c8 = ExternalProject.new { |t|
-  t.name = 'c8'
-  t.git = 'https://github.com/chaos0x8/c8-cpp'
-  t.libs << 'libc8-common.a'
-  t.includes << 'c8-common.hpp'
-  t.rakeTasks << 'lib/libc8-common.a'
-  t.noRebuild = true
-}
+p = C8.project 'demo' do
+  flags << %w[--std=c++17]
 
-main = Executable.new { |t|
-  t.name = 'bin/main'
-  t.sources << FileList['src/**/*.cpp']
-  t.includes << 'src'
-  t.flags << '--std=c++17'
-  t << c8
-}
+  external build_dir.join('c8-cpp'), :git do
+    url 'https://github.com/chaos0x8/c8-cpp'
 
-task(default: Names[main])
+    products << %w[libc8-common.a c8-common.hpp]
 
-task(:clean) {
-  ['lib', 'bin', RakeBuilder.outDir].each { |fn|
-    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
-  }
-}
+    script <<~INLINE
+      rake lib/libc8-common.a
+    INLINE
+  end
+
+  executable 'bin/main' do
+    sources << Dir['src/**/*.cpp']
+  end
+end
+
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+end
+
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end

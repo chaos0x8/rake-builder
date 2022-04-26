@@ -17,21 +17,20 @@ module C8
 
         project.directory dirname
 
+        make_rule_mf project, dirname, mf_path
+        make_rule_o project, dirname, mf_path, o_path
+
+        o_path.to_s
+      end
+
+      private
+
+      def make_rule_mf(project, dirname, mf_path)
         project.file mf_path.to_s => [path.to_s, dirname.to_s, *project.preconditions] do |t|
           C8.sh project.gpp, *project.flags,
                 '-c', t.source, '-M', '-MM', '-MF', t.name,
                 verbose: project.verbose, silent: project.silent
         end
-
-        project.file o_path.to_s => [path.to_s, dirname.to_s, mf_path.to_s, *C8::Utility.read_mf(mf_path),
-                                     *project.preconditions] do |t|
-          C8.sh project.gpp, *project.flags,
-                '-c', t.source, '-o', t.name,
-                verbose: project.verbose, silent: project.silent,
-                nonVerboseMessage: "#{project.gpp} #{t.source}"
-        end
-
-        o_path.to_s
       end
     end
   end

@@ -42,9 +42,20 @@ module C8
       end
 
       def link(lib)
-        libs << lib.path.to_s
-        flags << "-L#{lib.path.dirname}"
-        flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
+        case lib
+        when C8::Project::External
+          puts "TYGRYS #{lib.inspect}"
+          lib.libs.each do |v|
+            libs << v
+          end
+          flags << lib.flags
+        when C8::Project::Library
+          libs << lib.path.to_s
+          flags << "-L#{lib.path.dirname}"
+          flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
+        else
+          raise ScriptError, "Unknown type to link '#{lib.class}'"
+        end
       end
     end
   end

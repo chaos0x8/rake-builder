@@ -1,4 +1,4 @@
-require_relative 'project_file'
+require_relative 'project_source'
 
 module C8
   class Project
@@ -15,10 +15,10 @@ module C8
           value.each do |v|
             self << v
           end
-        when File
+        when Source
           self << value
         else
-          @files << File.new(value)
+          @files << Source.new(value)
         end
       end
 

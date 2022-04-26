@@ -4,23 +4,22 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-generated = []
-generated << Generate.includeDirectory('Source/Common')
+p = C8.project 'demo' do
+  templates.cpp_include_directory 'Source/Common.hpp' => Dir['Source/Common/*.hpp']
 
-app = Executable.new { |t|
-  t.name = 'bin/app'
-  t.requirements << generated
-  t.sources << 'Source/main.cpp'
-}
+  executable 'bin/main' do
+    sources << %w[Source/main.cpp]
+  end
+end
 
-multitask(default: Names[app, generated])
+desc 'Builds and executes application'
+C8.task default: 'demo' do
+  sh 'bin/main'
+end
 
-task(:clean) {
-  generated.each { |t|
-    FileUtils.rm t.name, verbose: true if File.exist?(t.name)
-  }
-
-  [RakeBuilder.outDir, 'bin'].each { |fn|
-    FileUtils.rm_rf fn, verbose: true if File.directory?(fn)
-  }
-}
+desc 'Removes build files'
+C8.target :clean do
+  p.dependencies.each do |path|
+    rm path
+  end
+end
