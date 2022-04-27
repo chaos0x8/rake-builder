@@ -176,7 +176,16 @@ module C8
     end
 
     def link lib
-      @library << C8::Utility.to_pathname(lib)
+      case lib
+      when String, Pathname
+        path = C8::Utility.to_pathname(lib)
+
+        @library << path
+        link_flags << "-L#{path.dirname}"
+        link_flags << "-l#{path.basename.sub_ext('').sub(/^lib/, '')}"
+      else
+        @library << path
+      end
     end
   end
 
