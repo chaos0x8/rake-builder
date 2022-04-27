@@ -21,16 +21,16 @@ module C8
         end
 
         project.file_generated path => items do
-          template = <<~INLINE
-            #pragma once
+          C8.erb workdir: @workdir || path.dirname,
+                 items: items do
+            <<~INLINE
+              #pragma once
 
-            <%- @items.each do |child| -%>
-            #include "<%= Pathname.new(child).relative_path_from(@workdir) %>"
-            <%- end -%>
-          INLINE
-
-          C8.erb template, workdir: @workdir || path.dirname,
-                           items: items
+              <%- items.each do |child| -%>
+              #include "<%= Pathname.new(child).relative_path_from(workdir) %>"
+              <%- end -%>
+            INLINE
+          end
         end
       end
 

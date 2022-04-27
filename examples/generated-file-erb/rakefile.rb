@@ -6,7 +6,9 @@ p = C8.project 'demo' do
   flags << %w[-Isrc --std=c++17]
 
   file_generated 'src/enum.hpp' => 'src/enum.hpp.erb' do
-    C8.erb(IO.read('src/enum.hpp.erb'), names: %w[a b c])
+    C8.erb names: %w[a b c] do
+      IO.read 'src/enum.hpp.erb'
+    end
   end
 
   executable 'bin/main' do
