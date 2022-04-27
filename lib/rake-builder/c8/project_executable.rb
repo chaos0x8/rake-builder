@@ -59,6 +59,12 @@ module C8
           libs << lib.path.to_s
           link_flags << "-L#{lib.path.dirname}"
           link_flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
+        when String, Pathname
+          path = C8::Utility.to_pathname(lib)
+
+          libs << path.to_s
+          link_flags << "-L#{path.dirname}"
+          link_flags << "-l#{path.basename.sub_ext('').sub(/^lib/, '')}"
         else
           raise ScriptError, "Unknown type to link '#{lib.class}'"
         end

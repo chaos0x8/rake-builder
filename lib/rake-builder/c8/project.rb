@@ -43,7 +43,14 @@ module C8
       end
 
       @library.each do |lib|
-        lib.make_rule(project: self)
+        case lib
+        when String, Pathname
+          nil
+        when C8::Project::Library
+          lib.make_rule(project: self)
+        else
+          raise ScriptError, "Unsupported library class '#{lib.class}'"
+        end
       end
 
       @executable.each do |exe|
@@ -166,6 +173,10 @@ module C8
 
     def to_out(path, ext)
       build_dir.join(path).sub_ext(path.extname + ext)
+    end
+
+    def link lib
+      @library << C8::Utility.to_pathname(lib)
     end
   end
 
