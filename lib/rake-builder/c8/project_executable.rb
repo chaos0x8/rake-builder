@@ -53,7 +53,8 @@ module C8
           lib.libs.each do |v|
             libs << v
           end
-          link_flags << lib.flags
+          flags << lib.flags
+          link_flags << lib.link_flags
         when C8::Project::Library
           libs << lib.path.to_s
           link_flags << "-L#{lib.path.dirname}"

@@ -7,13 +7,14 @@ module C8
         end
       end
 
-      attr_reader :path, :flags, :libs, :products
+      attr_reader :path, :flags, :link_flags, :libs, :products
 
       def initialize(path, type, &block)
         @path = C8::Utility.to_pathname(path)
         @type = type
         @script = nil
         @flags = Flags.new
+        @link_flags = Flags.new
         @libs = []
         @products = Products.new
 
@@ -30,7 +31,7 @@ module C8
 
       def make_rule(project:)
         @products.each do |req|
-          found = path.glob(File.join('**', req)).select do |fn|
+          found = path.glob(::File.join('**', req)).select do |fn|
             fn.to_s =~ /#{Regexp.quote(req.to_s)}$/
           end
 
@@ -43,8 +44,8 @@ module C8
               @flags << "-I#{fn.to_s.chomp(req.to_s)}"
             when '.a'
               @libs << fn.to_s
-              @flags << "-L#{fn.to_s.chomp(req.to_s)}"
-              @flags << "-l#{fn.basename.sub_ext('').sub(/^lib/, '')}"
+              @link_flags << "-L#{fn.to_s.chomp(req.to_s)}"
+              @link_flags << "-l#{fn.basename.sub_ext('').sub(/^lib/, '')}"
             end
           end
         rescue C8::Project::External::Error

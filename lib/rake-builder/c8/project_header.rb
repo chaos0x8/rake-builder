@@ -4,6 +4,18 @@ require_relative 'project_file'
 module C8
   class Project
     class Header < C8::Project::File
+      class ZeroTarget
+        attr_reader :flags
+
+        def initialize
+          @flags = []
+        end
+      end
+
+      def initialize path
+        super(path, target: ZeroTarget.new)
+      end
+
       private
 
       def make_rule_o(project, dirname, mf_path, o_path)
