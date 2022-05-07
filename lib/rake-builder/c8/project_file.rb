@@ -3,6 +3,14 @@ require_relative 'utility'
 module C8
   class Project
     class File
+      class ZeroTarget
+        attr_reader :flags
+
+        def initialize
+          @flags = []
+        end
+      end
+
       attr_reader :path
 
       def initialize(path, target:)

@@ -4,15 +4,7 @@ require_relative 'project_file'
 module C8
   class Project
     class Header < C8::Project::File
-      class ZeroTarget
-        attr_reader :flags
-
-        def initialize
-          @flags = []
-        end
-      end
-
-      def initialize path
+      def initialize(path)
         super(path, target: ZeroTarget.new)
       end
 
@@ -28,9 +20,9 @@ module C8
 
           begin
             C8.sh project.gpp, *project.flags, *@target.flags,
-                  '-x', 'c++', '-c', '-', '-o', o_path.to_s, in: r,
-                                                             verbose: project.verbose, silent: project.silent,
-                                                             nonVerboseMessage: "#{project.gpp} #{t.source}"
+                  '-x', 'c++', '-c', '-', '-o', t.name, in: r,
+                                                        verbose: project.verbose, silent: project.silent,
+                                                        nonVerboseMessage: "#{project.gpp} #{t.source}"
           ensure
             r.close
           end

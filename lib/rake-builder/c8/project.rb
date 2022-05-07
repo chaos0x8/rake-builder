@@ -77,7 +77,7 @@ module C8
       @desc = value
     end
 
-    def pkg_config pkg
+    def pkg_config(pkg)
       @flags << C8::Utility.pkg_config('--cflags', pkg)
       @link_flags << C8::Utility.pkg_config('--libs', pkg)
     end
@@ -114,6 +114,12 @@ module C8
 
     def header(name)
       Header.new(name).tap do |header|
+        @to_generate << header.make_rule(self)
+      end
+    end
+
+    def precompiled_header(name)
+      PrecompiledHeader.new(name).tap do |header|
         @to_generate << header.make_rule(self)
       end
     end
@@ -175,7 +181,7 @@ module C8
       build_dir.join(path).sub_ext(path.extname + ext)
     end
 
-    def link lib
+    def link(lib)
       case lib
       when String, Pathname
         path = C8::Utility.to_pathname(lib)
