@@ -4,7 +4,7 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-p = C8.project 'demo' do
+C8.project 'demo' do
   file_generated 'src/hello.hpp' => __FILE__ do
     <<~INLINE
       #pragma once
@@ -45,8 +45,4 @@ C8.task default: 'demo' do
 end
 
 desc 'Removes build files'
-C8.target :clean do
-  p.dependencies.each do |path|
-    rm path
-  end
-end
+C8.task clean: 'demo:clean'

@@ -4,8 +4,8 @@ require_relative 'project_file'
 module C8
   class Project
     class Header < C8::Project::File
-      def initialize(path)
-        super(path, target: ZeroTarget.new)
+      def initialize(path, target: ZeroTarget.new)
+        super(path, target: target)
       end
 
       private

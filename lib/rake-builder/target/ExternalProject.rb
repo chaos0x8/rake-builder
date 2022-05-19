@@ -11,6 +11,7 @@ class ExternalProject
   attr_reader :libs, :includes, :rakeTasks, :path
 
   def initialize(name: nil, git: nil, wget: nil, submodule: nil, rakefile: nil, libs: nil, includes: nil, description: nil, rakeTasks: nil, outDir: nil)
+    warn "#{self.class} is deprecated, use C8.project.external instead"
     extend RakeBuilder::Desc
 
     @name = name
@@ -30,24 +31,25 @@ class ExternalProject
     required(:name)
     required_alt(:rakefile, :rakeTasks)
     required_alt(:git, :wget, :submodule)
-    required_val(:submodule) { |val|
+    required_val(:submodule) do |val|
       val != @name
-    }
+    end
 
     @path = cloneTask(@git) if @git
     @path = downloadTask(@wget) if @wget
     @path = submoduleInit(@submodule) if @submodule
 
     if @rakefile
-      C8.task(@name => @path) {
-        C8.sh "cd #{Shellwords.escape(@path)} && rake -f #{Shellwords.escape(File.expand_path(@rakefile))} --rakelib /dev/null", verbose: true
-      }
+      C8.task(@name => @path) do
+        C8.sh "cd #{Shellwords.escape(@path)} && rake -f #{Shellwords.escape(File.expand_path(@rakefile))} --rakelib /dev/null",
+              verbose: true
+      end
     end
 
     if @rakeTasks.size > 0
-      C8.task(@name => @path) {
+      C8.task(@name => @path) do
         C8.sh "cd #{Shellwords.escape(@path)} && rake #{@rakeTasks.to_a.join(' ')}", verbose: true
-      }
+      end
     end
   end
 
@@ -55,8 +57,8 @@ class ExternalProject
     @outDir || RakeBuilder.outDir
   end
 
-  def findLibs *libs, enum: nil
-    libs.collect { |fn|
+  def findLibs(*libs, enum: nil)
+    libs.collect do |fn|
       r = retryOnce(proc {
         Dir[File.join(@path, '**', fn)].first
       }, recover: proc {
@@ -77,29 +79,29 @@ class ExternalProject
       else
         raise "Unsupported extension: #{File.extname(fn)}"
       end
-    }.uniq
+    end.uniq
   end
 
-  def findIncludes *includes
-    includes.collect { |fn|
+  def findIncludes(*includes)
+    includes.collect do |fn|
       retryOnce(proc {
         Dir[File.join(@path, '**', fn)].collect { |r| r.chomp(fn) }.first
       }, recover: proc {
         invoke
       }, error: "failed to find #{fn}")
-    }.uniq
+    end.uniq
   end
 
-  def >> target
-    e = Array.new
+  def >>(other)
+    e = []
 
     @findLibs ||= findLibs(*@libs, enum: e)
     @findIncludes ||= findIncludes(*@includes)
 
-    target.libs << @findLibs
-    target.includes << @findIncludes
-    target.requirements << e
-    target.requirements << @name unless @noRebuild
+    other.libs << @findLibs
+    other.includes << @findIncludes
+    other.requirements << e
+    other.requirements << @name unless @noRebuild
 
     self
   end
@@ -108,48 +110,47 @@ class ExternalProject
     @name
   end
 
-private
-  def cloneTask url
+  private
+
+  def cloneTask(url)
     path = File.join(outDir, File.basename(url).chomp('.git'))
 
-    file(path => Names[Directory.new(outDir)]) {
+    file(path => Names[Directory.new(outDir)]) do
       C8.sh 'git', 'clone', url, path
-    }
+    end
 
     path
   end
 
-  def downloadTask url
-    [{ ext: '.tar.gz', tar_options: '-xzf' }].each { |ext:, tar_options:|
-      if url.match(/#{Regexp.quote(ext)}$/)
-        archive = File.join(outDir, File.basename(url))
-        path = File.join(outDir, File.basename(url).chomp(ext))
-        file(path => Names[Directory.new(outDir)]) {
-          begin
-            C8.sh 'wget', url, '-O', archive
-            C8.sh 'tar', '-C', File.dirname(archive), tar_options, archive
-          ensure
-            FileUtils.rm archive if File.exist? archive
-          end
-        }
+  def downloadTask(url)
+    [{ ext: '.tar.gz', tar_options: '-xzf' }].each do |ext:, tar_options:|
+      next unless url.match(/#{Regexp.quote(ext)}$/)
 
-        return path
+      archive = File.join(outDir, File.basename(url))
+      path = File.join(outDir, File.basename(url).chomp(ext))
+      file(path => Names[Directory.new(outDir)]) do
+        C8.sh 'wget', url, '-O', archive
+        C8.sh 'tar', '-C', File.dirname(archive), tar_options, archive
+      ensure
+        FileUtils.rm archive if File.exist? archive
       end
-    }
 
-    return nil
+      return path
+    end
+
+    nil
   end
 
-  def submoduleInit submodule
-    file(submodule) {
+  def submoduleInit(submodule)
+    file(submodule) do
       C8.sh 'git', 'submodule', 'init', verbose: true
       C8.sh 'git', 'submodule', 'update', verbose: true
-    }
+    end
 
     submodule
   end
 
-  def retryOnce block, error:, recover: nil
+  def retryOnce(block, error:, recover: nil)
     if r = block.call
       r
     else

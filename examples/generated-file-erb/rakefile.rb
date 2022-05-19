@@ -2,7 +2,7 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-p = C8.project 'demo' do
+C8.project 'demo' do
   flags << %w[-Isrc --std=c++17]
 
   file_generated 'src/enum.hpp' => 'src/enum.hpp.erb' do
@@ -22,8 +22,4 @@ C8.task default: 'demo' do
 end
 
 desc 'Removes build files'
-C8.target :clean do
-  p.dependencies.each do |path|
-    rm path
-  end
-end
+C8.task clean: 'demo:clean'

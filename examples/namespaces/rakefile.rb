@@ -6,4 +6,4 @@ desc 'Builds and executes application'
 C8.task default: 'demo:default'
 
 desc 'Removes build files'
-C8.task clean: 'demo:clean'
+C8.task clean: 'demo:demo:clean'

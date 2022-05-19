@@ -1,5 +1,5 @@
 namespace :demo do
-  p = C8.project 'demo' do
+  C8.project 'demo' do
     flags << %w[--std=c++0x -ISource]
 
     phony 'install_pkgs' do
@@ -18,12 +18,5 @@ namespace :demo do
   desc 'Builds and executes application'
   C8.task default: 'demo:demo' do
     sh 'bin/main'
-  end
-
-  desc 'Removes build files'
-  C8.target :clean do
-    p.dependencies.each do |path|
-      rm path
-    end
   end
 end

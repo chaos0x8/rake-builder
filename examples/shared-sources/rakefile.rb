@@ -4,7 +4,7 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-p = C8.project 'demo' do
+C8.project 'demo' do
   flags << %w[--std=c++17 -ISource]
 
   phony 'install_pkgs' do
@@ -27,8 +27,4 @@ C8.task default: 'demo' do
 end
 
 desc 'Removes build files'
-C8.target :clean do
-  p.dependencies.each do |path|
-    rm path
-  end
-end
+C8.task clean: 'demo:clean'

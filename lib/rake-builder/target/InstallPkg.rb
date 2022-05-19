@@ -10,6 +10,7 @@ class InstallPkg
   attr_reader :pkgs
 
   def initialize(name: nil, pkgs: [], description: nil)
+    warn "#{self.class} is deprecated, use C8.project.phony.apt_install instead"
     extend RakeBuilder::Desc
 
     @name = name

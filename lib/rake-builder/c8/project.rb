@@ -10,7 +10,7 @@ module C8
     include Rake::DSL
 
     attr_reader :flags, :link_flags, :name, :dependencies, :preconditions
-    attr_accessor :build_dir, :gpp, :ar, :verbose, :silent
+    attr_accessor :build_dir, :gpp, :ar, :verbose, :silent, :clean
 
     def initialize(name, &block)
       self.build_dir = '.obj'
@@ -18,6 +18,7 @@ module C8
       self.ar = 'ar'
       self.verbose = true
       self.silent = false
+      self.clean = { clean: 'Clean' }
 
       @name = name
       @desc = nil
@@ -31,41 +32,54 @@ module C8
       @library = []
       @external = []
 
-      instance_exec(self, &block)
+      namespace @name do
+        instance_exec(self, &block)
 
-      if @to_generate.size > 0
-        @preconditions << "#{@name}_to_generate"
-        C8.multiphony "#{@name}_to_generate" => @to_generate
-      end
-
-      @external.each do |ext|
-        ext.make_rule(project: self)
-      end
-
-      @library.each do |lib|
-        case lib
-        when String, Pathname
-          nil
-        when C8::Project::Library
-          lib.make_rule(project: self)
-        else
-          raise ScriptError, "Unsupported library class '#{lib.class}'"
-        end
-      end
-
-      @executable.each do |exe|
-        @library.each do |lib|
-          exe.link lib
+        if @to_generate.size > 0
+          @preconditions << "#{@name}_to_generate"
+          C8.multiphony "#{@name}_to_generate" => @to_generate
         end
 
         @external.each do |ext|
-          exe.link ext
+          ext.make_rule(project: self)
         end
 
-        exe.make_rule(project: self)
+        @library.each do |lib|
+          case lib
+          when String, Pathname
+            nil
+          when C8::Project::Library
+            lib.make_rule(project: self)
+          else
+            raise ScriptError, "Unsupported library class '#{lib.class}'"
+          end
+        end
+
+        @executable.each do |exe|
+          @library.each do |lib|
+            exe.link lib
+          end
+
+          @external.each do |ext|
+            exe.link ext
+          end
+
+          exe.make_rule(project: self)
+        end
+
+        clean.each do |name, description|
+          project = self
+
+          method(:desc).super_method.call description
+          C8.target(name) do
+            project.dependencies.each do |path|
+              rm path
+            end
+          end
+        end
       end
 
-      method(:desc).super_method.call @desc
+      method(:desc).super_method.call @desc if @desc
       C8.multitask(@name => dependencies)
     end
 
@@ -89,7 +103,6 @@ module C8
     end
 
     def test(name, &block)
-      warn 'test is deprecated use executable instead'
       Executable.new(name, &block).tap do |exe|
         @executable << exe
       end
@@ -178,6 +191,8 @@ module C8
     end
 
     def to_out(path, ext)
+      path = C8::Utility.to_pathname(path)
+
       build_dir.join(path).sub_ext(path.extname + ext)
     end
 

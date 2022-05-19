@@ -3,7 +3,7 @@ gem 'rake-builder'
 require 'rake-builder'
 require 'tmpdir'
 
-p = C8.project 'demo' do
+C8.project 'demo' do
   flags << %w[--std=c++17]
 
   external Pathname.new(Dir.tmpdir).join('.obj/c8-cpp'), :git do
@@ -27,8 +27,4 @@ C8.task default: 'demo' do
 end
 
 desc 'Removes build files'
-C8.target :clean do
-  p.dependencies.each do |path|
-    rm path
-  end
-end
+C8.task clean: 'demo:clean'

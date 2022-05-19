@@ -36,4 +36,19 @@ module C8
 
     nil
   end
+
+  def self.script(code)
+    C8.puts code
+
+    st = Open3.popen2e('sh') do |stdin, stdout, thread|
+      stdin.write code
+      stdout.each_line do |line|
+        C8.puts line
+      end
+
+      thread.value
+    end
+
+    rause 'C8.script failed!' if st.exitstatus != 0
+  end
 end

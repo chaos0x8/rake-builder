@@ -10,6 +10,7 @@ class Invoke
   attr_reader :requirements
 
   def initialize(name: nil, requirements: [], description: nil)
+    warn "#{self.class} is deprecated, use C8.project.phony"
     extend RakeBuilder::Desc
 
     @name = name

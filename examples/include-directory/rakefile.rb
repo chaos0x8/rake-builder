@@ -4,7 +4,7 @@ autoload :FileUtils, 'fileutils'
 
 require 'rake-builder'
 
-p = C8.project 'demo' do
+C8.project 'demo' do
   templates.cpp_include_directory 'Source/Common.hpp' => Dir['Source/Common/*.hpp']
 
   executable 'bin/main' do
@@ -18,8 +18,4 @@ C8.task default: 'demo' do
 end
 
 desc 'Removes build files'
-C8.target :clean do
-  p.dependencies.each do |path|
-    rm path
-  end
-end
+C8.task clean: 'demo:clean'

@@ -17,6 +17,7 @@ class GeneratedFile
   attr_accessor :name, :action, :code, :requirements
 
   def initialize(name: nil, action: nil, code: nil, description: nil, requirements: [], format: false)
+    warn "#{self.class} is deprecated, use C8.project.file_generated instead"
     extend RakeBuilder::Desc
     extend RakeBuilder::Track::Ext
 
@@ -38,21 +39,17 @@ class GeneratedFile
     desc @description if @description
 
     if @action
-      file(@name => Names[dir, cl, @requirements]) {
+      file(@name => Names[dir, cl, @requirements]) do
         call_(@action)
-      }
+      end
     end
 
     if @code
-      file(@name => Names[dir, cl, @requirements]) {
+      file(@name => Names[dir, cl, @requirements]) do
         if txt = call_(@code)
-          if txt.kind_of? Array
-            txt = txt.join("\n")
-          end
+          txt = txt.join("\n") if txt.is_a? Array
 
-          if @format
-            txt = format_(txt)
-          end
+          txt = format_(txt) if @format
 
           if File.exist?(@name) and IO.read(@name) == txt
             FileUtils.touch @name
@@ -60,27 +57,27 @@ class GeneratedFile
             IO.write(@name, txt)
           end
         end
-      }
+      end
     end
   end
 
-  alias_method :_names_, :name
+  alias _names_ name
 
-private
-  def call_ callback
+  private
+
+  def call_(callback)
     callback.call(@name, Names[@requirements].first)
   end
 
-  def format_ txt
+  def format_(txt)
     out, st = Open3.capture2e('clang-format', '-assume-filename', @name, '-style=file', stdin_data: txt)
     if st.exitstatus == 0
       out.chomp
     else
-      $stderr.puts "Warning: error during clang-format"
-      $stderr.puts out.chomp
+      warn 'Warning: error during clang-format'
+      warn out.chomp
 
       txt
     end
   end
 end
-

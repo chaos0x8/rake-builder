@@ -22,7 +22,7 @@ module C8
       end
 
       def url(value)
-        @url = value
+        @url = C8::Utility.to_pathname(value)
       end
 
       def script(value)
@@ -42,6 +42,11 @@ module C8
             case req.extname
             when '.hpp', '.h'
               @flags << "-I#{fn.to_s.chomp(req.to_s)}"
+            when '.so'
+              @libs << fn.to_s
+              @link_flags << "-Wl,rpath=#{fn.dirname}"
+              @link_flags << "-L#{fn.dirname}"
+              @link_flags << "-l#{fn.basename.sub_ext('').sub(/^lib/, '')}"
             when '.a'
               @libs << fn.to_s
               @link_flags << "-L#{fn.dirname}"
@@ -49,7 +54,7 @@ module C8
             end
           end
         rescue C8::Project::External::Error
-          retry if invoke
+          retry if invoke project
           raise
         end
 
@@ -58,7 +63,7 @@ module C8
 
       private
 
-      def invoke
+      def invoke(project)
         unless @invoked
           case @type
           when :submodule
@@ -68,8 +73,20 @@ module C8
             end
             C8.sh "cd #{Shellwords.escape(path)} && #{@script.split("\n").join(' && ')}" if @script
           when :git
-            C8.sh 'git', 'clone', @url, path.to_s unless path.directory?
+            C8.sh 'git', 'clone', @url.to_s, path.to_s unless path.directory?
             C8.sh "cd #{Shellwords.escape(path)} && #{@script.split("\n").join(' && ')}" if @script
+          when :wget
+            archive = project.to_out(@url.basename, '')
+            begin
+              C8.sh 'wget', @url.to_s, '-O', archive.to_s
+              C8.sh 'tar', '-C', path.dirname.to_s, '-zxf', archive.to_s
+              C8.script <<~SCRIPT
+                cd #{Shellwords.escape(path)}
+                #{@script}
+              SCRIPT
+            ensure
+              FileUtils.rm archive, verbose: true if archive.exist?
+            end
           else
             raise ScriptError, "Unrecognized type '#{@type}'"
           end

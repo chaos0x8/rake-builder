@@ -10,11 +10,28 @@ module C8
 
         @libs = []
         @link_flags = Flags.new
+        @library = []
+        @external = []
 
         instance_exec(self, &block)
       end
 
       def make_rule(project:)
+        @library.each do |lib|
+          case lib
+          when C8::Project::Library
+            lib.make_rule(project: project)
+            link lib
+          else
+            raise ScriptError, "Unsuported library type: '#{lib.class}'"
+          end
+        end
+
+        @external.each do |ext|
+          ext.make_rule(project: project)
+          link ext
+        end
+
         object_files = sources.collect do |src|
           src.make_rule project
         end
@@ -42,9 +59,21 @@ module C8
         path.to_s
       end
 
-      def pkg_config pkg
+      def pkg_config(pkg)
         @flags << C8::Utility.pkg_config('--cflags', pkg)
         @link_flags << C8::Utility.pkg_config('--libs', pkg)
+      end
+
+      def library(*args, &block)
+        Library.new(*args, &block).tap do |lib|
+          @library << lib
+        end
+      end
+
+      def external(*args, &block)
+        External.new(*args, &block).tap do |ext|
+          @external << ext
+        end
       end
 
       def link(lib)
@@ -60,7 +89,12 @@ module C8
           link_flags << "-L#{lib.path.dirname}"
           link_flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
         when String, Pathname
-          libs << lib.to_s
+          case lib
+          when '.a', '.so'
+            libs << lib.to_s
+          else
+            raise ArgumentError, "Unsuported library extension '#{lib}'"
+          end
         else
           raise ScriptError, "Unknown type to link '#{lib.class}'"
         end

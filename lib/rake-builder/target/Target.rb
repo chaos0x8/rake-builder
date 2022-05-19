@@ -13,6 +13,7 @@ module RakeBuilder
     attr_reader :flags, :includes, :sources, :libs, :pkgs, :requirements
 
     def initialize(name: nil, sources: [], includes: [], flags: [], libs: [], pkgs: [], requirements: [], description: nil)
+      warn "#{self.class} is deprecated"
       extend RakeBuilder::Desc
       extend RakeBuilder::Track::Ext
 
