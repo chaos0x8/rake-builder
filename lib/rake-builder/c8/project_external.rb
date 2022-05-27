@@ -44,7 +44,7 @@ module C8
               @flags << "-I#{fn.to_s.chomp(req.to_s)}"
             when '.so'
               @libs << fn.to_s
-              @link_flags << "-Wl,rpath=#{fn.dirname}"
+              @link_flags << "-Wl,-rpath=#{fn.dirname}"
               @link_flags << "-L#{fn.dirname}"
               @link_flags << "-l#{fn.basename.sub_ext('').sub(/^lib/, '')}"
             when '.a'
