@@ -8,10 +8,12 @@ require 'pathname'
 project_name = Pathname.new(__FILE__).dirname.basename.to_s
 
 C8.project 'demo' do |_p|
+  description 'builds demo project'
+
   flags << %w[-std=c++17]
 
   executable project_name do
-    desc 'Builds application'
+    description 'Builds application'
     sources << Dir['*.cpp']
   end
 end

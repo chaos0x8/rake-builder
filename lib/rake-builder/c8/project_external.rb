@@ -1,3 +1,5 @@
+require_relative 'project_dsl'
+
 module C8
   class Project
     class External
@@ -7,16 +9,21 @@ module C8
         end
       end
 
-      attr_reader :path, :flags, :link_flags, :libs, :products
+      include Project::DSL
+
+      attr_reader :path, :libs
+
+      project_attr_reader :flags, default: -> { Flags.new }
+      project_attr_reader :link_flags, default: -> { Flags.new }
+      project_attr_reader :products, default: -> { Products.new }
 
       def initialize(path, type, &block)
         @path = C8::Utility.to_pathname(path)
         @type = type
         @script = nil
-        @flags = Flags.new
-        @link_flags = Flags.new
         @libs = []
-        @products = Products.new
+
+        initialize_project_attrs
 
         instance_exec(self, &block)
       end

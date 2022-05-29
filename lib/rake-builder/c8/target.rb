@@ -2,11 +2,13 @@ require 'rake'
 require 'pathname'
 
 require_relative 'install'
+require_relative 'project_dsl'
 
 module C8
   class Target
     include Rake::DSL
     include C8::Install
+    include Project::DSL
 
     @commands = []
 
@@ -64,12 +66,15 @@ module C8
       method(:sh).super_method.call(*args, **opts)
     end
 
+    project_attr_writer :description
+
     def initialize(name = nil, type: :task, **opts, &block)
       name ||= opts.to_a.dig(0, 0)
 
       @mkdir = []
       @dependencies = [opts.to_a.dig(0, 1)].flatten.compact
-      @desc = nil
+
+      initialize_project_attrs
 
       self.class.instance_variable_get(:@commands).each do |cmd|
         instance_variable_set(:"@#{cmd}", [])
@@ -77,16 +82,12 @@ module C8
 
       instance_eval(&block)
 
-      method(:desc).super_method.call @desc if @desc
+      desc @description if @description
       C8.send(type, name => @dependencies.collect(&:to_s)) do
         self.class.instance_variable_get(:@commands).each do |cmd|
           send(:"do_#{cmd}")
         end
       end
-    end
-
-    def desc(val)
-      @desc = val
     end
 
     def mkdir(path)

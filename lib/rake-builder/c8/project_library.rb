@@ -25,7 +25,7 @@ module C8
 
         project.directory dirname
 
-        project.method(:desc).super_method.call @desc
+        project.desc @description if @description
         project.file path.to_s => [dirname.to_s, cl_path.to_s, *C8::Utility.read_cl(cl_path),
                                    *project.preconditions] do |t|
           C8.sh project.ar, 'vsr', t.name, *object_files,

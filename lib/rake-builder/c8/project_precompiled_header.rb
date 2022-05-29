@@ -13,6 +13,7 @@ module C8
 
         mf_path = project.to_out(path, '.gch.mf')
         gch_path = path.sub_ext(path.extname + '.gch')
+        @output_paths = [mf_path, gch_path]
 
         project.directory dirname
 

@@ -4,13 +4,20 @@ require_relative 'project_containers'
 require_relative 'project_executable'
 require_relative 'project_library'
 require_relative 'project_templates'
+require_relative 'project_dsl'
 
 module C8
   class Project
     include Rake::DSL
+    include Project::DSL
 
-    attr_reader :flags, :link_flags, :name, :dependencies, :preconditions
-    attr_accessor :build_dir, :gpp, :ar, :verbose, :silent, :clean
+    attr_reader :name, :dependencies, :preconditions
+    attr_accessor :build_dir, :gpp, :ar, :verbose, :silent
+
+    project_attr_reader :flags, default: -> { Flags.new }
+    project_attr_reader :link_flags, default: -> { Flags.new }
+    project_attr_reader :preconditions, default: -> { Container.new }
+    project_attr_writer :description, default: -> { 'Build task' }
 
     def initialize(name, &block)
       self.build_dir = '.obj'
@@ -18,19 +25,17 @@ module C8
       self.ar = 'ar'
       self.verbose = true
       self.silent = false
-      self.clean = { clean: 'Clean' }
+
+      initialize_project_attrs
 
       @name = name
-      @desc = nil
-      @flags = Flags.new
-      @link_flags = Flags.new
       @directory = []
       @dependencies = []
-      @preconditions = []
       @to_generate = []
       @executable = []
       @library = []
       @external = []
+      @deps = { main: [], test: [] }
 
       namespace @name do
         instance_exec(self, &block)
@@ -67,28 +72,52 @@ module C8
           exe.make_rule(project: self)
         end
 
-        clean.each do |name, description|
-          project = self
+        unless @deps[:main].empty?
+          deps = @deps[:main].reduce([]) do |sum, tgt|
+            sum + tgt.output_paths
+          end
 
-          method(:desc).super_method.call description
-          C8.target(name) do
-            project.dependencies.each do |path|
-              rm path
+          desc 'Build project'
+          C8.multitask main: deps
+        end
+
+        unless @deps[:test].empty?
+          deps = @deps.reduce([]) do |sum, (_key, tgts)|
+            sum + tgts.reduce([]) do |sum, tgt|
+              sum + tgt.output_paths
             end
+          end
+
+          desc 'Build and run tests'
+          C8.multitask test: deps.collect(&:to_s) do
+            @deps[:test].each do |exe|
+              sh ::File.join('.', exe.path)
+            end
+          end
+        end
+
+        unless dependencies.empty?
+          desc 'Build all'
+          C8.multitask all: dependencies
+        end
+
+        project = self
+
+        C8.target :clean do
+          description 'Clean all'
+
+          project.dependencies.each do |path|
+            rm path
           end
         end
       end
 
-      method(:desc).super_method.call @desc if @desc
+      desc @description if @description
       C8.multitask(@name => dependencies)
     end
 
     def build_dir=(value)
       @build_dir = C8::Utility.to_pathname(value)
-    end
-
-    def desc(value)
-      @desc = value
     end
 
     def pkg_config(pkg)
@@ -99,18 +128,21 @@ module C8
     def executable(name, &block)
       Executable.new(name, &block).tap do |exe|
         @executable << exe
+        @deps[:main] << exe
       end
     end
 
     def test(name, &block)
       Executable.new(name, &block).tap do |exe|
         @executable << exe
+        @deps[:test] << exe
       end
     end
 
     def library(name, &block)
       Library.new(name, &block).tap do |lib|
         @library << lib
+        @deps[:main] << lib
       end
     end
 
@@ -207,6 +239,10 @@ module C8
       else
         @library << path
       end
+    end
+
+    def desc(arg)
+      method(:desc).super_method.call(arg)
     end
   end
 

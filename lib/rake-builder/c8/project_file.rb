@@ -11,11 +11,12 @@ module C8
         end
       end
 
-      attr_reader :path
+      attr_reader :path, :output_paths
 
       def initialize(path, target:)
         @path = C8::Utility.to_pathname(path)
         @target = target
+        @output_paths = []
       end
 
       def make_rule(project)
@@ -23,6 +24,7 @@ module C8
 
         mf_path = project.to_out(path, '.mf')
         o_path = project.to_out(path, '.o')
+        @output_paths = [mf_path, o_path]
 
         project.directory dirname
 

@@ -3,13 +3,12 @@ require_relative 'project_item'
 module C8
   class Project
     class Executable < Item
-      attr_reader :libs, :link_flags
+      project_attr_reader :libs, default: -> { [] }
+      project_attr_reader :link_flags, default: -> { Flags.new }
 
       def initialize(*args,  **opts, &block)
         super(*args, **opts, &block)
 
-        @libs = []
-        @link_flags = Flags.new
         @library = []
         @external = []
 
@@ -47,7 +46,7 @@ module C8
 
         project.directory dirname
 
-        project.method(:desc).super_method.call @desc
+        project.desc @description if @description
         project.file path.to_s => [dirname.to_s, cl_path.to_s, *C8::Utility.read_cl(cl_path), *libs,
                                    *project.preconditions] do |t|
           C8.sh project.gpp, *project.flags, *flags, *object_files, *link_flags, *project.link_flags,
@@ -89,11 +88,11 @@ module C8
           link_flags << "-L#{lib.path.dirname}"
           link_flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
         when String, Pathname
-          case lib
+          case ext = C8::Utility.to_pathname(lib).extname
           when '.a', '.so'
             libs << lib.to_s
           else
-            raise ArgumentError, "Unsuported library extension '#{lib}'"
+            raise ArgumentError, "Unsuported library extension '#{ext}'"
           end
         else
           raise ScriptError, "Unknown type to link '#{lib.class}'"
