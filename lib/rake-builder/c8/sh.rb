@@ -42,13 +42,17 @@ module C8
 
     st = Open3.popen2e('sh') do |stdin, stdout, thread|
       stdin.write code
+      stdin.close
+
       stdout.each_line do |line|
         C8.puts line
       end
 
       thread.value
+    ensure
+      stdout.close
     end
 
-    rause 'C8.script failed!' if st.exitstatus != 0
+    raise 'C8.script failed!' if st.exitstatus != 0
   end
 end

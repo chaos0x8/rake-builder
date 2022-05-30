@@ -78,10 +78,16 @@ module C8
               C8.sh 'git', 'submodule', 'init', verbose: true
               C8.sh 'git', 'submodule', 'update', verbose: true
             end
-            C8.sh "cd #{Shellwords.escape(path)} && #{@script.split("\n").join(' && ')}" if @script
+            C8.script <<~SCRIPT
+              cd #{Shellwords.escape(path)}
+              #{@script}
+            SCRIPT
           when :git
             C8.sh 'git', 'clone', @url.to_s, path.to_s unless path.directory?
-            C8.sh "cd #{Shellwords.escape(path)} && #{@script.split("\n").join(' && ')}" if @script
+            C8.script <<~SCRIPT
+              cd #{Shellwords.escape(path)}
+              #{@script}
+            SCRIPT
           when :wget
             archive = project.to_out(@url.basename, '')
             begin

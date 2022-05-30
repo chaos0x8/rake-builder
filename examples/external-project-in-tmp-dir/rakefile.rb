@@ -12,7 +12,7 @@ C8.project 'demo' do
     products << %w[libc8-common.a c8-common.hpp]
 
     script <<~INLINE
-      rake lib/libc8-common.a
+      rake c8-common:main
     INLINE
   end
 

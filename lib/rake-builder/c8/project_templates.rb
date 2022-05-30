@@ -10,24 +10,28 @@ module C8
       def cpp_include_directory(**opts, &block)
         instance_exec(self, &block) if block
 
-        if opts.size > 0
-          path = C8::Utility.to_pathname(opts.keys.first)
-          items = case opts.values.first
-                  when Pathname
-                    opts.values.first.children
-                  else
-                    opts.values.first
-                  end
-        end
+        raise ArgumentError, 'Expected exactly one named argument!' unless opts.size == 1
+
+        path = C8::Utility.to_pathname(opts.keys.first)
+        items = case opts.values.first
+                when Pathname
+                  opts.values.first.children.uniq
+                else
+                  opts.values.first.uniq
+                end
+        workdir = @workdir || path.dirname
 
         project.file_generated path => items do
-          C8.erb workdir: @workdir || path.dirname,
-                 items: items do
+          include_paths = items.collect do |child|
+            Pathname.new(child).relative_path_from(workdir)
+          end.uniq
+
+          C8.erb paths: include_paths do
             <<~INLINE
               #pragma once
 
-              <%- items.each do |child| -%>
-              #include "<%= Pathname.new(child).relative_path_from(workdir) %>"
+              <%- paths.each do |path| -%>
+              #include "<%= path %>"
               <%- end -%>
             INLINE
           end
