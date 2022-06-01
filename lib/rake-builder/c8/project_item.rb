@@ -14,10 +14,10 @@ module C8
       project_attr_reader :sources, default: -> { Sources.new(target: self) }
       project_attr_writer :description
 
-      def initialize(path)
+      def initialize(path, **opts)
         @path = C8::Utility.to_pathname(path)
 
-        initialize_project_attrs
+        initialize_project_attrs(**opts)
       end
 
       def dirname

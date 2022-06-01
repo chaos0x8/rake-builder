@@ -91,7 +91,7 @@ module C8
           desc 'Build and run tests'
           C8.multitask test: deps.collect(&:to_s) do
             @deps[:test].each do |exe|
-              sh ::File.join('.', exe.path)
+              sh ::File.join('.', exe.path) if exe.autorun
             end
           end
         end
@@ -132,8 +132,8 @@ module C8
       end
     end
 
-    def test(name, &block)
-      Executable.new(name, &block).tap do |exe|
+    def test(name, autorun: true, &block)
+      Executable.new(name, autorun: autorun, &block).tap do |exe|
         @executable << exe
         @deps[:test] << exe
       end

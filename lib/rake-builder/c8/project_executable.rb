@@ -5,6 +5,7 @@ module C8
     class Executable < Item
       project_attr_reader :libs, default: -> { [] }
       project_attr_reader :link_flags, default: -> { Flags.new }
+      project_attr_accessor :autorun, default: -> { false }
 
       def initialize(*args,  **opts, &block)
         super(*args, **opts, &block)
