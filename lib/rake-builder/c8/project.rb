@@ -54,6 +54,10 @@ module C8
           when String, Pathname
             nil
           when C8::Project::Library
+            @external.each do |ext|
+              lib.link ext
+            end
+
             lib.make_rule(project: self)
           else
             raise ScriptError, "Unsupported library class '#{lib.class}'"

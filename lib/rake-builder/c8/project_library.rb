@@ -35,6 +35,15 @@ module C8
 
         path.to_s
       end
+
+      def link(ext)
+        case ext
+        when C8::Project::External
+          flags << ext.flags
+        else
+          raise ScriptError, "Unknown type to link '#{ext.class}'"
+        end
+      end
     end
   end
 end

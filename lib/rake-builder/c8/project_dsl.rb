@@ -4,11 +4,12 @@ module C8
       Attr = Struct.new(:value, :mode)
 
       def self.included(mod)
-        mod.define_singleton_method :project_attr_writer do |name, default: nil|
+        mod.define_singleton_method :project_attr_writer do |name, default: nil, transform: nil|
           mod.instance_variable_set(:@project_attrs, {}) unless mod.instance_variable_defined?(:@project_attrs)
           mod.instance_variable_get(:@project_attrs)[name] = Attr.new(default, :w)
 
           define_method name do |value|
+            value = transform.call(value) if transform
             instance_variable_set(:"@#{name}", value)
           end
         end
@@ -19,10 +20,16 @@ module C8
           mod.attr_reader name
         end
 
-        mod.define_singleton_method :project_attr_accessor do |name, default: nil|
+        mod.define_singleton_method :project_attr_accessor do |name, default: nil, transform: nil|
           mod.instance_variable_set(:@project_attrs, {}) unless mod.instance_variable_defined?(:@project_attrs)
           mod.instance_variable_get(:@project_attrs)[name] = Attr.new(default, :rw)
-          mod.attr_accessor name
+
+          define_method "#{name}=" do |value|
+            value = transform.call(value) if transform
+            instance_variable_set(:"@#{name}", value)
+          end
+
+          mod.attr_reader name
         end
       end
 

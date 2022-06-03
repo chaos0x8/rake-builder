@@ -16,6 +16,7 @@ module C8
       project_attr_reader :flags, default: -> { Flags.new }
       project_attr_reader :link_flags, default: -> { Flags.new }
       project_attr_reader :products, default: -> { Products.new }
+      project_attr_writer :url, transform: ->(x) { C8::Utility.to_pathname(x) }
 
       def initialize(path, type, &block)
         @path = C8::Utility.to_pathname(path)
@@ -26,10 +27,6 @@ module C8
         initialize_project_attrs
 
         instance_exec(self, &block)
-      end
-
-      def url(value)
-        @url = C8::Utility.to_pathname(value)
       end
 
       def script(value)
@@ -48,7 +45,7 @@ module C8
           found.each do |fn|
             case req.extname
             when '.hpp', '.h'
-              @flags << "-I#{fn.to_s.chomp(req.to_s)}"
+              @flags << "-I#{fn.to_s.chomp(req.to_s).chomp('/')}"
             when '.so'
               @libs << fn.to_s
               @link_flags << "-Wl,-rpath=#{fn.dirname}"
