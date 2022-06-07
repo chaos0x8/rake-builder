@@ -5,7 +5,7 @@ module C8
     end
 
     def apt_installed?(pkg)
-      pid, st = Process.wait2(Process.spawn('dpkg', '-s', pkg, %i[out err] => '/dev/null'))
+      out, st = Open3.capture2e('dpkg', '-s', pkg)
       st.exitstatus == 0
     end
 
@@ -15,7 +15,7 @@ module C8
           apt_installed? pkg
         end
 
-        sh 'sudo', '-E', 'apt', 'install', *to_install unless to_install.empty?
+        C8.sh 'sudo', '-E', 'apt', 'install', *to_install unless to_install.empty?
       end
     end
 
@@ -25,7 +25,7 @@ module C8
           apt_installed? pkg
         end
 
-        sh 'sudo', '-E', 'apt', 'remove', *to_remove unless to_remove.empty?
+        C8.sh 'sudo', '-E', 'apt', 'remove', *to_remove unless to_remove.empty?
       end
     end
 
@@ -41,7 +41,7 @@ module C8
         end
 
         to_install.each do |pkg|
-          sh 'sudo', '-E', 'gem', 'install', pkg
+          C8.sh 'sudo', '-E', 'gem', 'install', pkg
         end
       end
     end
@@ -53,7 +53,7 @@ module C8
         end
 
         to_remove.each do |pkg|
-          sh 'sudo', '-E', 'gem', 'uninstall', pkg
+          C8.sh 'sudo',  'gem', 'uninstall', pkg
         end
       end
     end

@@ -1,132 +1,15 @@
-require 'rake'
-require 'pathname'
-
-require_relative 'install'
-require_relative 'project_dsl'
+require_relative 'project_phony'
 
 module C8
-  class Target
-    include Rake::DSL
-    include C8::Install
-    include Project::DSL
-
-    @commands = []
-
-    def self.command(name, aggregate: false, &block)
-      define_method(name) do |*args, **opts|
-        instance_variable_get(:"@#{name}") << [args, opts]
-      end
-
-      if aggregate
-        define_method(:"do_#{name}") do
-          args, opts = instance_variable_get(:"@#{name}").reduce([[], {}]) do |sum, item|
-            [sum[0] + item[0], sum[1].merge(item[1])]
-          end
-
-          instance_exec(*args, **opts, &block)
-        end
-      else
-        define_method(:"do_#{name}") do
-          instance_variable_get(:"@#{name}").each do |args, opts|
-            instance_exec(*args, **opts, &block)
-          end
-        end
-      end
-
-      @commands << name
-    end
-
-    command :rm do |path|
-      path = to_pathname(path)
-
-      if path.directory?
-        FileUtils.rm_rf path, verbose: true
-      elsif path.exist?
-        FileUtils.rm path, verbose: true
-      end
-    end
-
-    command :apt_install, aggregate: true do |*pkgs|
-      method(:apt_install).super_method.call(*pkgs)
-    end
-
-    command :apt_remove, aggregate: true do |*pkgs|
-      method(:apt_remove).super_method.call(*pkgs)
-    end
-
-    command :gem_install, aggregate: true do |*pkgs|
-      method(:gem_install).super_method.call(*pkgs)
-    end
-
-    command :gem_uninstall, aggregate: true do |*pkgs|
-      method(:gem_uninstall).super_method.call(*pkgs)
-    end
-
-    command :sh do |*args, **opts|
-      method(:sh).super_method.call(*args, **opts)
-    end
-
-    project_attr_writer :description
-
-    def initialize(name = nil, type: :task, **opts, &block)
-      name ||= opts.to_a.dig(0, 0)
-
-      @mkdir = []
-      @dependencies = [opts.to_a.dig(0, 1)].flatten.compact
-
-      initialize_project_attrs
-
-      self.class.instance_variable_get(:@commands).each do |cmd|
-        instance_variable_set(:"@#{cmd}", [])
-      end
-
-      instance_eval(&block)
-
-      desc @description if @description
-      C8.send(type, name => @dependencies.collect(&:to_s)) do
-        self.class.instance_variable_get(:@commands).each do |cmd|
-          send(:"do_#{cmd}")
-        end
-      end
-    end
-
-    def mkdir(path)
-      path = to_pathname(path)
-
-      directory path.to_s unless @mkdir.include?(path)
-
-      @dependencies << path
-    end
-
-    def cp(src, dst)
-      src = to_pathname(src)
-      dst = to_pathname(dst)
-
-      mkdir dst.dirname
-
-      if src.directory?
-        mkdir dst
-
-        src.children.each do |child|
-          cp child, dst.join(child.basename)
-        end
-      else
-        file dst.to_s => [src.to_s, dst.dirname.to_s] do |_t|
-          FileUtils.cp src, dst, verbose: true
-        end
-      end
-
-      @dependencies << dst
-    end
-
-    private
-
-    def to_pathname(o)
-      o.is_a?(Pathname) ? o : Pathname.new(o)
+  class Target < C8::Project::Phony
+    def initialize(*args, **opts, &block)
+      warn "#{self.class} is deprecated, use C8::Project::Phony instead"
+      super(*args, **opts, &block)
     end
   end
 
   def self.target(*args, **opts, &block)
-    Target.new(*args, **opts, &block)
+    warn 'C8.target is deprecated, use C8::Project::Phony.new instead'
+    C8::Project::Phony.new(*args, **opts, &block)
   end
 end

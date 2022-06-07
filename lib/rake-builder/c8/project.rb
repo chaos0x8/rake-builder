@@ -1,10 +1,10 @@
-require_relative 'target'
 require_relative 'utility'
 require_relative 'project_containers'
 require_relative 'project_executable'
 require_relative 'project_library'
 require_relative 'project_templates'
 require_relative 'project_dsl'
+require_relative 'project_phony'
 
 module C8
   class Project
@@ -17,7 +17,7 @@ module C8
     project_attr_reader :flags, default: -> { Flags.new }
     project_attr_reader :link_flags, default: -> { Flags.new }
     project_attr_reader :preconditions, default: -> { Container.new }
-    project_attr_writer :description, default: -> { 'Build task' }
+    project_attr_writer :description
 
     def initialize(name, &block)
       self.build_dir = '.obj'
@@ -107,7 +107,7 @@ module C8
 
         project = self
 
-        C8.target :clean do
+        Phony.new :clean do
           description 'Clean all'
 
           project.dependencies.each do |path|
@@ -157,8 +157,9 @@ module C8
     end
 
     def phony(name, &block)
-      @preconditions << name
-      C8.target name, type: :phony, &block
+      Phony.new(name, &block).tap do |phony|
+        @preconditions << phony.make_rule(self)
+      end
     end
 
     def header(name)
