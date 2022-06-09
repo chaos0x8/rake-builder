@@ -36,19 +36,14 @@ module C8
           src.make_rule project
         end
 
-        cl_path = project.to_out(path, '.cl')
-        cl_dirname = cl_path.dirname
-
-        project.directory cl_dirname
-
-        project.file cl_path.to_s => [*object_files, cl_dirname.to_s] do |t|
-          IO.write(t.name, object_files.join("\n"))
-        end
+        cl = ComponentList.new project.to_out(path, '.cl')
+        cl.sources << sources.to_a
+        cl.make_rule project: project
 
         project.directory dirname
 
         project.desc @description if @description
-        project.file path.to_s => [dirname.to_s, cl_path.to_s, *C8::Utility.read_cl(cl_path), *libs,
+        project.file path.to_s => [dirname.to_s, cl.path.to_s, *object_files, *libs,
                                    *project.preconditions] do |t|
           C8.sh project.gpp, *project.flags, *flags, *object_files, *link_flags, *project.link_flags,
                 '-o', t.name,

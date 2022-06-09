@@ -5,9 +5,16 @@ module C8
     class Container
       include Enumerable
 
-      def initialize(&block)
+      def initialize(convert: nil)
         @value = []
-        @convert = block
+
+        if convert
+          @convert = convert
+
+          define_singleton_method :convert do |v|
+            instance_exec(v, &@convert)
+          end
+        end
       end
 
       def <<(value)
@@ -41,9 +48,21 @@ module C8
     class Flags < Container
     end
 
+    class StringContainer < Container
+      def initialize
+        super(convert: proc do |v|
+          if v.respond_to? :path
+            v.path.to_s
+          else
+            v.to_s
+          end
+        end)
+      end
+    end
+
     class Products < Container
-      def convert(v)
-        C8::Utility.to_pathname(v)
+      def initialize
+        super convert: ->(v) { C8::Utility.to_pathname(v) }
       end
     end
   end

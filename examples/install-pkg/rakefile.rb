@@ -25,8 +25,8 @@ C8.project 'install-pkg' do |p|
   end
 end
 
-C8.target default: 'install-pkg' do
-  description 'Builds and executes binary'
+desc 'Builds and executes binary'
+C8.task default: 'install-pkg' do
   sh 'bin/main'
 end
 
