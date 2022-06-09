@@ -123,7 +123,9 @@ class ExternalProject
   end
 
   def downloadTask(url)
-    [{ ext: '.tar.gz', tar_options: '-xzf' }].each do |ext:, tar_options:|
+    [{ ext: '.tar.gz', tar_options: '-xzf' }].each do |hash|
+      hash => { ext:, tar_options: }
+
       next unless url.match(/#{Regexp.quote(ext)}$/)
 
       archive = File.join(outDir, File.basename(url))

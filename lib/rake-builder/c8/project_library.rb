@@ -21,7 +21,7 @@ module C8
         project.directory dirname
 
         project.desc @description if @description
-        project.file path.to_s => [dirname.to_s, cl_path.to_s, *object_files,
+        project.file path.to_s => [dirname.to_s, cl.path.to_s, *object_files,
                                    *project.preconditions] do |t|
           C8.sh project.ar, 'vsr', t.name, *object_files,
                 verbose: project.verbose, silent: project.silent,
