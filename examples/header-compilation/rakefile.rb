@@ -2,22 +2,24 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-C8.project 'demo' do
-  flags << %w[--std=c++17 -Wall -Werror]
+demo = project do |p|
+  p.flags << %w[--std=c++17 -Wall -Werror]
 
-  executable 'bin/main' do
-    sources << Dir['src/**/*.cpp']
+  p.executable 'bin/main' do |t|
+    t.sources << Dir['src/**/*.cpp']
   end
 
   Dir['src/**/*.hpp'].each do |path|
-    header path
+    p.header path
   end
 end
 
 desc 'Builds and executes application'
-C8.task default: 'demo' do
+multitask default: [*demo.requirements] do
   sh 'bin/main'
 end
 
 desc 'Removes build files'
-C8.task clean: 'demo:clean'
+task :clean do
+  demo.clean
+end

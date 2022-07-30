@@ -1,22 +1,27 @@
 namespace :demo do
-  C8.project 'demo' do
-    flags << %w[--std=c++0x -ISource]
+  demo = project do |p|
+    p.flags << %w[--std=c++0x -ISource]
 
-    phony 'install_pkgs' do
-      apt_install 'ruby-dev'
+    p.configure 'install_pkgs' do |t|
+      t.apt_install 'ruby-dev'
     end
 
-    library 'lib/libmain.a' do
-      sources << %w[Source/Hello.cpp]
+    p.library 'lib/libmain.a' do |t|
+      t.sources << %w[Source/Hello.cpp]
     end
 
-    executable 'bin/main' do
-      sources << %w[Source/main.cpp]
+    p.executable 'bin/main' do |t|
+      t.sources << %w[Source/main.cpp]
     end
   end
 
-  desc 'Builds and executes application'
-  C8.task default: 'demo:demo' do
+  desc 'Builds and executes demo application'
+  task default: [*demo.requirements] do
     sh 'bin/main'
+  end
+
+  desc 'Cleans demo application'
+  task :clean do
+    demo.clean
   end
 end

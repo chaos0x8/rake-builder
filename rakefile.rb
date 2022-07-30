@@ -1,15 +1,27 @@
 #!/usr/bin/ruby
 
-desc 'Runs unit tests'
-task(:test => 'generated:default') {
-  args = Dir['test/**/Test*.rb'].collect { |fn| ['-e', "require '#{File.expand_path(fn)}'"] }
-  sh 'ruby', *args.flatten
-  sh 'rspec', *Dir['test/**/*_spec.rb']
-}
+require_relative 'lib/rake-builder/dsl/generated_file'
 
-desc 'Runs all major targets'
-task(:all => ['test', 'examples', 'gem'])
+include RakeBuilder::DSL
 
-desc 'Runs unit tests and creates gem file'
-task(:default => ['test', 'gem'])
+f = generated_file 'lib/rake-builder.rb' do |t|
+  t.track Dir['lib/rake-builder/**/*.rb']
 
+  t.erb = proc do
+    <<~INLINE
+      <%- t.tracked.each do |path| -%>
+      require_relative '<%= path.relative_path_from(t.path.dirname) %>'
+      <%- end -%>
+
+      include RakeBuilder::DSL
+    INLINE
+  end
+end
+
+desc 'Default task'
+task default: [f.path.to_s]
+
+desc 'Executes unit tests'
+task :test do
+  sh 'rspec', *Dir['tests/**/*_spec.rb']
+end

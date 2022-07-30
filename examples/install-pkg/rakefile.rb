@@ -1,34 +1,33 @@
 gem 'rake-builder'
 
-autoload :FileUtils, 'fileutils'
-
 require 'rake-builder'
 
-C8.project 'install-pkg' do |p|
-  p.build_dir = '.obj'
+demo = project do |p|
   p.flags << %w[--std=c++0x -ISource]
 
-  t = p.phony :install_pkgs do
-    description 'Installs preconditions'
-    apt_install 'ruby-dev'
+  p.configure :install_ruby do |t|
+    t.description = 'Installs preconditions'
+    t.apt_install 'ruby-dev'
   end
 
-  p.executable 'bin/main' do |_t|
-    description 'Build application'
-    flags << %w[-lpthread]
-    sources << Dir['Source/main.cpp']
+  p.library 'lib/libmain.a' do |t|
+    t.description = 'Build library'
+    t.sources << Dir['Source/*.cpp'] - Dir['Source/main.cpp']
   end
 
-  p.library 'lib/libmain.a' do |_t|
-    description 'Build library'
-    sources << Dir['Source/*.cpp'] - Dir['Source/main.cpp']
+  p.executable 'bin/main' do |t|
+    t.description = 'Build application'
+    t.flags << %w[-lpthread]
+    t.sources << Dir['Source/main.cpp']
   end
 end
 
 desc 'Builds and executes binary'
-C8.task default: 'install-pkg' do
+multitask default: [*demo.requirements] do
   sh 'bin/main'
 end
 
 desc 'Removes build files'
-C8.task clean: 'install-pkg:clean'
+task :clean do
+  demo.clean
+end

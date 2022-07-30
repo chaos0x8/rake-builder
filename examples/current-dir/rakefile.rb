@@ -1,41 +1,37 @@
 gem 'rake-builder'
 
-autoload :FileUtils, 'fileutils'
-
 require 'rake-builder'
-require 'pathname'
 
-project_name = Pathname.new(__FILE__).dirname.basename.to_s
+demo = project do |p|
+  p.flags << %w[-std=c++17]
 
-C8.project 'demo' do |_p|
-  description 'builds demo project'
-
-  flags << %w[-std=c++17]
-
-  library 'libhello.a' do
-    sources << Dir['*.cpp'] - %w[main.cpp main-ut.cpp]
+  p.library 'libhello.a' do |t|
+    t.description = 'Builds library'
+    t.sources << Dir['*.cpp'] - %w[main.cpp main-ut.cpp]
   end
 
-  executable project_name do
-    description 'Builds application'
-    sources << %w[main.cpp]
+  p.executable 'demo' do |t|
+    t.description = 'Builds application'
+    t.sources << %w[main.cpp]
   end
 
-  test "#{project_name}-ut", autorun: false do
-    description 'Build test application'
-    sources << %w[main-ut.cpp]
+  p.executable 'demo-ut' do |t|
+    t.description = 'Builds test application'
+    t.sources << %w[main-ut.cpp]
   end
 end
 
 desc 'Builds and executes application'
-C8.multitask default: 'demo:all' do
-  sh File.join('.', project_name)
+multitask default: [*demo.requirements('demo')] do
+  sh File.join('.', 'demo')
+end
+
+desc 'Executes test application'
+multitask test: [*demo.requirements('demo-ut')] do
+  sh File.join('.', 'demo-ut')
 end
 
 desc 'Removes build files'
-C8.task clean: 'demo:clean'
-
-desc 'Executes test application'
-C8.multitask test: 'demo:test' do
-  sh File.join('.', "#{project_name}-ut")
+task :clean do
+  demo.clean
 end
