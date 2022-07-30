@@ -71,7 +71,7 @@ module RakeBuilder
         unless @invoked
           case @type
           when :submodule
-            unless @path.directory?
+            unless @path.directory? || @path.children.empty?
               builder.sh 'git', 'submodule', 'init', verbose: true
               builder.sh 'git', 'submodule', 'update', verbose: true
             end
