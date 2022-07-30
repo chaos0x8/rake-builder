@@ -9,7 +9,10 @@ context 'Phony' do
 
   subject do
     configure :install_ruby do |t|
-      t.apt_install 'ruby-dev'
+      expect(t).to respond_to(:apt_install)
+      expect(t).to respond_to(:apt_remove)
+      expect(t).to respond_to(:gem_install)
+      expect(t).to respond_to(:gem_uninstall)
     end
   end
 

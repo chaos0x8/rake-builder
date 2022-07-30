@@ -22,11 +22,13 @@ module RakeBuilder
         end
       end
 
-      def apt_install(*args)
-        @commands.push(proc do
-          pkgs = Utility::StringContainer.new(args)
-          RakeBuilder.apt_install(*pkgs)
-        end)
+      %w[apt_install apt_remove gem_install gem_uninstall].each do |sym|
+        define_method sym do |*args|
+          @commands.push(proc do
+            pkgs = Utility::StringContainer.new(args)
+            RakeBuilder.send(sym, *pkgs)
+          end)
+        end
       end
     end
 
