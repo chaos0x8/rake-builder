@@ -13,6 +13,8 @@ context 'Library' do
     end
   end
 
+  include_examples 'pkg_config', :flags
+
   it 'has path' do
     expect(subject.path).to be == Pathname.new('lib.a')
   end

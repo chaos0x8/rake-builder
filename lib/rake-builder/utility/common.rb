@@ -56,5 +56,12 @@ module RakeBuilder
 
       nil
     end
+
+    def self.pkg_config(option, pkg)
+      o, s = Open3.capture2e('pkg-config', option, pkg)
+      raise RakeBuilder::MissingPkgError, pkg unless s.exitstatus == 0
+
+      Shellwords.split(o)
+    end
   end
 end

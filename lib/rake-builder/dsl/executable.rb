@@ -14,6 +14,7 @@ module RakeBuilder
       def_attr :link_flags, Utility::Flags
       def_attr :sources, -> { Sources.new(self) }
       def_clean :requirements, :path
+      def_pkg_config
 
       def initialize(p)
         @path = Utility.to_pathname(p)

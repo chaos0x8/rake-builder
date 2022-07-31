@@ -69,6 +69,22 @@ module RakeBuilder
             instance_variable_get(:@exclude_from_clean) << arg
           end
         end
+
+        mod.define_singleton_method :def_pkg_config do
+          define_method :pkg_config do |*pkgs|
+            unless respond_to?(:flags) or respond_to?(:link_flags)
+              raise ScriptError,
+                    'Neither flags or link_flags are defined!'
+            end
+
+            Utility::StringContainer.new.tap do |c|
+              c << pkgs
+            end.each do |pkg|
+              flags << Utility.pkg_config('--cflags', pkg) if respond_to?(:flags)
+              link_flags << Utility.pkg_config('--libs', pkg) if respond_to?(:link_flags)
+            end
+          end
+        end
       end
     end
   end

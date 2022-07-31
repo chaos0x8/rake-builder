@@ -20,6 +20,8 @@ context 'Project' do
     end
   end
 
+  include_examples 'pkg_config', :flags, :link_flags
+
   it 'has requirements' do
     expect(subject.requirements).to contain_exactly(*%w[.obj/exec.cl .obj/f1.cpp.o .obj/f1.cpp.mf .obj/f2.cpp.o
                                                         .obj/f2.cpp.mf exec])

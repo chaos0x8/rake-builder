@@ -36,6 +36,7 @@ context 'Executable' do
   end
 
   include_examples 'Executable common'
+  include_examples 'pkg_config', :flags, :link_flags
 
   it_behaves_like 'it has description'
 
