@@ -77,6 +77,12 @@ module RakeBuilder
                     'Neither flags or link_flags are defined!'
             end
 
+            if instance_variable_defined?(:@configures)
+              instance_variable_get(:@configures).each do |conf|
+                Rake::Task[conf.name].invoke
+              end
+            end
+
             Utility::StringContainer.new.tap do |c|
               c << pkgs
             end.each do |pkg|

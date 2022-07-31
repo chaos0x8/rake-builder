@@ -231,5 +231,7 @@ context 'Project' do
 
       subject.clean
     end
+
+    include_examples 'pkg_config', :flags, :link_flags, configures: [:install_ruby]
   end
 end
