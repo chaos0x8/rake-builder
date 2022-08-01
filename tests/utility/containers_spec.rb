@@ -42,6 +42,54 @@ describe 'Containers' do
 
       expect(subject.to_a).to be == expected
     end
+
+    it 'deletes item from on_tail' do
+      subject.on_tail << %w[item1 item2]
+
+      subject.delete 'item1'
+
+      expected = %w[item2].collect { |x| type.new(x) }
+
+      expect(subject).to contain_exactly(*expected)
+    end
+
+    it 'deletes multiple items/0' do
+      subject << %w[item1 item2]
+      subject.on_tail << %w[item3 item4]
+
+      other = subject.class.new(%w[item1 item3])
+
+      subject.delete other
+
+      expected = %w[item2 item4].collect { |x| type.new(x) }
+
+      expect(subject).to contain_exactly(*expected)
+    end
+
+    it 'deletes multiple items/1' do
+      subject << %w[item1 item2]
+      subject.on_tail << %w[item3 item4]
+
+      other = subject.class.new
+      other.on_tail << (%w[item1 item3])
+
+      subject.delete other
+
+      expected = %w[item2 item4].collect { |x| type.new(x) }
+
+      expect(subject).to contain_exactly(*expected)
+    end
+
+    it 'substracts containers' do
+      subject << %w[item1 item2 item3]
+
+      other = subject.class.new(%w[item3])
+      other.on_tail << %w[item1]
+
+      expected = %w[item2].collect { |x| type.new(x) }
+
+      expect(subject - other).to contain_exactly(*expected)
+    end
   end
 
   context 'Paths' do

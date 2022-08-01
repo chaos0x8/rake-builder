@@ -58,6 +58,16 @@ module RakeBuilder
       def delete(value)
         if value.nil?
           nil
+        elsif value.is_a? Container
+          value.each do |v|
+            delete v
+          end
+
+          if value.respond_to?(:on_tail)
+            value.on_tail.each do |v|
+              delete v
+            end
+          end
         elsif value.respond_to? :each
           value.each do |v|
             delete v
@@ -69,13 +79,14 @@ module RakeBuilder
                        value
                      end
           @value.delete(to_erase)
+          @on_tail.delete(to_erase) if instance_variable_defined?(:@on_tail)
         end
       end
 
       def -(other)
         raise ArgumentError, "Expected #{self.class}, but got #{other.class}" unless other.instance_of?(self.class)
 
-        StringContainer.new.tap do |result|
+        self.class.new.tap do |result|
           result << (each.to_a - other.each.to_a)
         end
       end
