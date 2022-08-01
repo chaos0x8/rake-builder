@@ -30,6 +30,16 @@ module RakeBuilder
       def <<(value)
         if value.nil?
           nil
+        elsif value.is_a? Container
+          value.each do |v|
+            self << v
+          end
+
+          if value.respond_to?(:on_tail) && respond_to?(:on_tail)
+            value.on_tail.each do |v|
+              on_tail << v
+            end
+          end
         elsif value.respond_to? :each
           value.each do |v|
             self << v
