@@ -87,7 +87,7 @@ module RakeBuilder
               c << pkgs
             end.each do |pkg|
               flags << Utility.pkg_config('--cflags', pkg) if respond_to?(:flags)
-              link_flags << Utility.pkg_config('--libs', pkg) if respond_to?(:link_flags)
+              link_flags.on_tail << Utility.pkg_config('--libs', pkg) if respond_to?(:link_flags)
             end
           end
         end

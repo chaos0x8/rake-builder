@@ -5,8 +5,16 @@ module RakeBuilder
     class Container
       include Enumerable
 
-      def initialize(value = nil, convert: nil)
+      def initialize(value = nil, convert: nil, is_tail: nil)
         @value = []
+
+        unless is_tail
+          @on_tail = Container.new(convert: convert, is_tail: true)
+
+          define_singleton_method :on_tail do
+            instance_variable_get(:@on_tail)
+          end
+        end
 
         if convert
           @convert = convert
@@ -33,6 +41,8 @@ module RakeBuilder
                       value
                     end
         end
+
+        self
       end
 
       def delete(value)
@@ -40,7 +50,7 @@ module RakeBuilder
           nil
         elsif value.respond_to? :each
           value.each do |v|
-            self << v
+            delete v
           end
         else
           to_erase = if respond_to? :convert
@@ -61,15 +71,23 @@ module RakeBuilder
       end
 
       def each(&block)
-        @value.uniq.each(&block)
+        to_a.each(&block)
       end
 
       def size
-        @value.uniq.size
+        to_a.size
       end
 
       def to_a
-        @value.uniq
+        if instance_variable_defined?(:@on_tail)
+          self.class.new.tap do |c|
+            c << @value
+            c.delete @on_tail
+            c << @on_tail
+          end.instance_variable_get(:@value).uniq
+        else
+          @value.uniq
+        end
       end
     end
 
