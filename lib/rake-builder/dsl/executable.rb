@@ -15,6 +15,7 @@ module RakeBuilder
       def_attr :sources, -> { Sources.new(self) }
       def_clean :requirements, :path
       def_pkg_config
+      def_link on_tail: false
 
       def initialize(p)
         @path = Utility.to_pathname(p)
@@ -37,26 +38,6 @@ module RakeBuilder
           c << dependencies
           c << sources.collect { |x| builder.path_to_o(x) }
           c << sources.collect { |x| builder.path_to_mf(x) }
-        end
-      end
-
-      def link(lib)
-        case lib
-        when Array
-          lib.each do |l|
-            link l
-          end
-        when Library
-          depend lib.requirements
-          depend lib.path
-
-          link_flags << "-L#{lib.path.dirname}"
-          link_flags << "-l#{lib.path.basename.sub_ext('').sub(/^lib/, '')}"
-        when External
-          flags << lib.flags
-          link_flags << lib.link_flags
-        else
-          raise ArgumentError, "Unsuported type to link '#{lib.class}'"
         end
       end
     end

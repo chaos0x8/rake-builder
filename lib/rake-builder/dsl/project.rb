@@ -9,6 +9,7 @@ module RakeBuilder
       def_attr :flags, Utility::Flags
       def_attr :link_flags, Utility::Flags
       def_pkg_config
+      def_link on_tail: true
 
       def initialize
         @libraries = []

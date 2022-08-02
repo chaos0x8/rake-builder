@@ -91,6 +91,34 @@ module RakeBuilder
             end
           end
         end
+
+        mod.define_singleton_method :def_link do |on_tail:|
+          define_method :link do |lib|
+            dst_link_flags = on_tail ? link_flags.on_tail : link_flags
+
+            case lib
+            when Array
+              lib.each do |l|
+                link l
+              end
+            when Library
+              depend lib.requirements
+
+              link lib.path
+            when External
+              flags << lib.flags
+              dst_link_flags << lib.link_flags
+            when Pathname
+              depend lib
+              link_flags << "-L#{lib.dirname}"
+              dst_link_flags << "-l#{lib.basename.sub_ext('').sub(/^lib/, '')}"
+            when String
+              link Pathname.new(lib)
+            else
+              raise ArgumentError, "Unsuported type to link '#{lib.class}'"
+            end
+          end
+        end
       end
     end
   end

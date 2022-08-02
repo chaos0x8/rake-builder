@@ -1,7 +1,7 @@
 Gem::Specification.new { |s|
   s.name        = 'rake-builder'
-  s.version     = '7.0.7'
-  s.date        = '2022-08-01'
+  s.version     = '7.0.8'
+  s.date        = '2022-08-02'
   s.summary     = "#{s.name} library"
   s.description = "Library for easier rakefile creation"
   s.authors     = ["chaos0x8"]

@@ -27,6 +27,12 @@ context 'Project' do
                                                         .obj/f2.cpp.mf exec])
   end
 
+  it 'links with library' do
+    subject.link 'lib/libabc.a'
+
+    expect(subject.link_flags).to contain_exactly(*%w[-Llib -labc])
+  end
+
   it 'cleans itself' do
     expect(RakeBuilder::Utility).to receive(:clean).with(contain_exactly(*%w[.obj/exec.cl .obj/f1.cpp.o .obj/f1.cpp.mf .obj/f2.cpp.o
                                                                              .obj/f2.cpp.mf exec]))
