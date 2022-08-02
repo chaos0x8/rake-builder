@@ -99,7 +99,7 @@ module RakeBuilder
 
   @builder = RakeBuilder::RakeBuilderImpl.new
 
-  %i[sh script out_dir gpp gpp= ar ar=].each do |sym|
+  %i[sh script out_dir out_dir= gpp gpp= ar ar=].each do |sym|
     define_singleton_method sym do |*args, **opts, &block|
       @builder.send(sym, *args, **opts, &block)
     end
