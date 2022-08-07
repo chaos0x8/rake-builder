@@ -34,6 +34,10 @@ module RakeBuilder
             t.exclude_from_clean @generate_target_name
           end
 
+          @externals.each do |ext|
+            t.flags << ext.flags
+          end
+
           @configures.each do |conf|
             t.depend conf.name
             t.exclude_from_clean conf.name
