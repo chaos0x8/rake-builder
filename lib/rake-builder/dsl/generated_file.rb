@@ -2,6 +2,7 @@ require 'erb'
 
 require_relative 'base'
 require_relative 'component_list'
+require_relative '../c8/erb'
 
 module RakeBuilder
   module DSL
@@ -22,7 +23,7 @@ module RakeBuilder
 
         desc @description if @description
         file path.to_s => [*dependencies] do |t|
-          IO.write(t.name, erb_eval)
+          IO.write(t.name, C8.erb_eval(@erb))
         end
       end
 
@@ -33,25 +34,6 @@ module RakeBuilder
       end
 
       def_clean :path
-
-      private
-
-      def erb_eval
-        case @erb
-        when Proc
-          erb = ERB.new(@erb.call, trim_mode: '-')
-          erb.result @erb.binding
-        when String
-          erb = ERB.new(@erb, trim_mode: '-')
-          erb.result RakeBuilder::DSL::GeneratedFile.empty_binding
-        else
-          raise ArgumentError, "Expected `Proc` or `String` but got: #{@erb.class}"
-        end
-      end
-
-      def self.empty_binding
-        binding
-      end
     end
 
     def generated_file(path, &block)

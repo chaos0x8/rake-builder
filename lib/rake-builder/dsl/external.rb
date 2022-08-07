@@ -1,5 +1,6 @@
 require_relative 'base'
 require_relative '../error'
+require_relative '../c8/erb'
 
 module RakeBuilder
   module DSL
@@ -77,13 +78,13 @@ module RakeBuilder
             end
             builder.script <<~SCRIPT
               cd #{Shellwords.escape(@path)}
-              #{@script}
+              #{C8.erb_eval(@script)}
             SCRIPT
           when :git
             builder.sh 'git', 'clone', @url.to_s, @path.to_s unless @path.directory?
             builder.script <<~SCRIPT
               cd #{Shellwords.escape(@path)}
-              #{@script}
+              #{C8.erb_eval(@script)}
             SCRIPT
           when :wget
             archive = project.to_out(@url.basename, '')
@@ -92,7 +93,7 @@ module RakeBuilder
               builder.sh 'tar', '-C', @path.dirname.to_s, '-zxf', archive.to_s
               builder.script <<~SCRIPT
                 cd #{Shellwords.escape(@path)}
-                #{@script}
+                #{C8.erb_eval(@script)}
               SCRIPT
             ensure
               FileUtils.rm archive, verbose: true if archive.exist?
