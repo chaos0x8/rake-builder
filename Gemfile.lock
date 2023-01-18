@@ -1,22 +1,22 @@
 PATH
   remote: .
   specs:
-    rake-builder (6.1.2)
+    rake-builder (7.0.11)
       rake
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.0.1)
+    activesupport (7.0.4.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    concurrent-ruby (1.1.9)
+    concurrent-ruby (1.1.10)
     diff-lcs (1.5.0)
-    i18n (1.8.11)
+    i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    minitest (5.15.0)
+    minitest (5.17.0)
     mocha (1.13.0)
     power_assert (2.0.1)
     rake (13.0.6)
@@ -41,7 +41,7 @@ GEM
       activesupport (>= 4.2.0)
     test-unit (3.5.3)
       power_assert
-    tzinfo (2.0.4)
+    tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
 
 PLATFORMS
