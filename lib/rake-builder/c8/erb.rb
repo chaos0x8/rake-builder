@@ -1,4 +1,4 @@
-autoload :ERB, 'erb'
+require 'erb'
 
 module C8
   module Detail

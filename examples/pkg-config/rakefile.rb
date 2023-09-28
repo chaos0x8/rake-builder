@@ -4,6 +4,7 @@ require 'rake-builder'
 
 project = RakeBuilder::Project.new
 project.flags << %w[--std=c++17 -Isrc]
+project.pkg_config %w[ruby]
 
 project.executable 'bin/out' do |t|
   t.sources << Dir['src/**/*.cpp']

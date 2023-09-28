@@ -1,22 +1,7 @@
 namespace(:examples) do
   task(default: 'gem:install') do
-    separator = '---------------------'
-    info = []
-
-    Dir['examples/*'].each do |dir|
-      Dir.chdir(dir) do
-        $stdout.puts separator
-        $stdout.puts "Example: #{File.basename(dir)}"
-        $stdout.puts separator
-        sh 'rake', 'clean'
-        sh 'rake'
-        info << "Example: #{File.basename(dir)} => OK"
-      end
-    end
-
-    $stdout.puts separator
-    $stdout.puts info
-    $stdout.puts separator
+    examples = Pathname.pwd.glob(['examples/*/*_spec.rb'])
+    system 'rspec', '-f', 'd', *examples.collect(&:to_s)
   end
 
   desc 'Generates template for new example'
@@ -24,41 +9,58 @@ namespace(:examples) do
     name = args[:name]
 
     files = [].tap do |arr|
-      arr.push(generated_file(File.join('examples', name, 'rakefile.rb')) do |t|
-        t.depend __FILE__
+      tmp = RakeBuilder::Project.new
+
+      arr.push(tmp.generated_file(File.join('examples', name, 'rakefile.rb')) do |t|
         t.erb = <<~INLINE
           gem 'rake-builder'
 
           require 'rake-builder'
 
-          demo = project do |p|
-            p.flags << %w[--std=c++17 -Isrc]
+          project = RakeBuilder::Project.new
+          project.flags << %w[--std=c++17 -Isrc]
 
-            p.executable 'bin/demo' do |t|
-              t.sources << Dir['src/**/*.cpp']
-            end
+          project.executable 'bin/out' do |t|
+            t.sources << Dir['src/**/*.cpp']
           end
 
-          desc 'Build task'
-          multitask default: [*demo.requirements] do
-            sh 'bin/demo'
-          end
+          desc 'Compile'
+          multitask compile: project.dependencies
 
-          desc 'Clean task'
+          desc 'Compile'
+          task default: :compile
+
+          desc 'Clean'
           task :clean do
-            demo.clean
+            project.clean
           end
         INLINE
       end)
 
-      arr.push(generated_file(File.join('examples', name, 'src', 'main.cpp')) do |t|
-        t.depend __FILE__
+      arr.push(tmp.generated_file(File.join('examples', name, 'src', 'main.cpp')) do |t|
         t.erb = <<~INLINE
           #include <iostream>
 
           int main(int argc, char** argv) {
             std::cout << "Hello world!\\n";
           }
+        INLINE
+      end)
+
+      arr.push(tmp.generated_file(File.join('examples', name, 'package_spec.rb')) do |t|
+        t.erb = <<~INLINE
+          require_relative '../../tests/examples_base'
+
+          example_describe __FILE__ do
+            it 'Executes and produces correct output' do
+              out, st = Open3.capture2e(work_dir.join('bin/out').to_s)
+
+              aggregate_failures do
+                expect(st.exitstatus).to be == 0
+                expect(out.chomp).to be == 'Hello world!'
+              end
+            end
+          end
         INLINE
       end)
     end

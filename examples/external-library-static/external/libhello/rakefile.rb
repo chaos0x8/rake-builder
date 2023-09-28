@@ -5,7 +5,7 @@ require 'rake-builder'
 project = RakeBuilder::Project.new
 project.flags << %w[--std=c++17 -Isrc]
 
-project.executable 'bin/out' do |t|
+project.library_static 'lib/libhello.a' do |t|
   t.sources << Dir['src/**/*.cpp']
 end
 

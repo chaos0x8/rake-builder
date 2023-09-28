@@ -1,19 +1,17 @@
 #!/usr/bin/ruby
 
-require_relative 'lib/rake-builder/dsl/generated_file'
+require_relative 'lib/rake-builder/project/generated_file'
 
-include RakeBuilder::DSL
+project = RakeBuilder::Project.new
 
-f = generated_file 'lib/rake-builder.rb' do |t|
-  t.track Dir['lib/rake-builder/**/*.rb']
+f = project.generated_file 'lib/rake-builder.rb' do |t|
+  t.tracked << Dir['lib/rake-builder/**/*.rb']
 
   t.erb = proc do
     <<~INLINE
       <%- t.tracked.each do |path| -%>
       require_relative '<%= path.relative_path_from(t.path.dirname) %>'
       <%- end -%>
-
-      include RakeBuilder::DSL
     INLINE
   end
 end

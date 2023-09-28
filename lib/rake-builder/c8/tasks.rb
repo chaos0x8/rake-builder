@@ -1,7 +1,7 @@
 require 'rake'
 
 module C8
-  class MultiPhony < Rake::Task
+  class MultiPhony < Rake::MultiTask
     def timestamp
       Time.at 0
     end

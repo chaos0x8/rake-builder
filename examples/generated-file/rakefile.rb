@@ -2,67 +2,44 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-prints = { hello: 'Hello world!',
-           bye: 'Bye!' }
+project = RakeBuilder::Project.new
+project.flags << %w[--std=c++17 -Isrc]
 
-demo = project do |p|
-  p.generated_file 'src/hello.hpp' do |t|
-    t.depend __FILE__
+project.generated_file 'src/value0.hpp' do |t|
+  t.erb = <<~INLINE
+    #pragma once
 
-    t.erb = proc do
-      <<~INLINE
-        #pragma once
+    constexpr auto value0 = 42;
+  INLINE
 
-        <%- prints.each do |name, text| -%>
-        void <%= name %>();
-        <%- end -%>
-      INLINE
-    end
-  end
-
-  p.generated_file 'src/hello.cpp' do |t|
-    t.depend __FILE__
-
-    t.erb = proc do
-      <<~INLINE
-        #include <iostream>
-        #include "hello.hpp"
-
-        <%- prints.each do |name, text| -%>
-        void <%= name %>() {
-          std::cout << "<%= text %>" << std::endl;
-        }
-        <%- end -%>
-      INLINE
-    end
-  end
-
-  p.generated_file 'src/main.cpp' do |t|
-    t.depend __FILE__
-
-    t.erb = proc do
-      <<~INLINE
-        #include "hello.hpp"
-
-        int main() {
-          hello();
-          bye();
-        }
-      INLINE
-    end
-  end
-
-  p.executable 'bin/app' do |t|
-    t.sources << %w[src/hello.cpp src/main.cpp]
-  end
+  t.dependencies << __FILE__
 end
 
-desc 'Builds and executes application'
-multitask default: [*demo.requirements] do
-  sh 'bin/app'
+project.generated_file 'src/value1.hpp' do |t|
+  val = 70
+
+  t.erb = proc do
+    <<~INLINE
+      #pragma once
+
+      constexpr auto value1 = <%= val %>;
+    INLINE
+  end
+
+  t.dependencies << __FILE__
 end
 
-desc 'Removes build files'
+project.executable 'bin/out' do |t|
+  t.sources << Dir['src/**/*.cpp']
+end
+
+desc 'Compile'
+multitask compile: project.dependencies
+
+desc 'Compile'
+task default: :compile
+
+desc 'Clean'
 task :clean do
-  demo.clean
+  project.clean
 end
