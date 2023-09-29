@@ -26,7 +26,7 @@ module RakeBuilder
 
         yield self if block_given?
 
-        dependencies << @project.rake_directory(path.dirname)
+        dependencies << @project.rake_directory(path.dirname) if path.dirname != Pathname('.')
         dependencies << sources.as_objects
 
         rake_desc

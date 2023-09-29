@@ -25,7 +25,7 @@ module RakeBuilder
 
         yield(self) if block_given?
 
-        dependencies << @project.rake_directory(@path.dirname)
+        dependencies << @project.rake_directory(@path.dirname) if @path.dirname != Pathname('.')
         dependencies << @project.tracked_list(@project.path_to_tl(path), tracked)
 
         rake_desc
