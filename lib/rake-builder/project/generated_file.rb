@@ -39,6 +39,12 @@ module RakeBuilder
           c << dependencies
         end
       end
+
+      def clean
+        tl_path = @project.path_to_tl(path)
+
+        Utility.clean(tl_path, path)
+      end
     end
 
     def generated_file(path, &block)

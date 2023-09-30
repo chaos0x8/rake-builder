@@ -87,6 +87,7 @@ module RakeBuilder
     def clean
       @libraries_static.each(&:clean)
       @executables.each(&:clean)
+      @generated_files.each(&:clean)
 
       Utility.clean(*@rake_directories)
     end

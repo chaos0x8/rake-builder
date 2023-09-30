@@ -21,10 +21,10 @@ class ExampleContext
 
       before :all do
         Dir.chdir(s.work_dir) do
-          out, st = capture 'rake', 'clean'
+          out, st = capture 'rake', '-t', 'clean'
           expect(st.exitstatus).to be == 0, "Clean failed!\n#{out}"
 
-          out, st = capture 'rake'
+          out, st = capture 'rake', '-t'
           expect(st.exitstatus).to be == 0, "Build failed!\n#{out}"
         end
       end

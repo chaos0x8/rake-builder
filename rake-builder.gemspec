@@ -1,6 +1,6 @@
 Gem::Specification.new { |s|
   s.name        = 'rake-builder'
-  s.version     = '8.0.2'
+  s.version     = '8.0.3'
   s.date        = '2023-09-30'
   s.summary     = "#{s.name} library"
   s.description = "Library for building simple C++ applications"
