@@ -1,5 +1,6 @@
 require_relative '../utility/container_path'
 require_relative '../error/unsuported_type'
+require_relative '../c8/erb'
 
 module RakeBuilder
   module Attributes
@@ -62,7 +63,7 @@ module RakeBuilder
           instance_variable_set(:"@#{name}", val)
         end
 
-        attr_reader :name
+        attr_reader name
       end
 
       mod.define_singleton_method :attr_tracked do
@@ -86,7 +87,11 @@ module RakeBuilder
       end
 
       mod.define_singleton_method :attr_erb do
-        attr_type_safe :erb, [Proc, String]
+        attr_type_safe :erb, [Proc, String, C8::ErbContext]
+
+        define_method :erb_context do |opts, text|
+          self.erb = C8::ErbContext.new opts, text
+        end
       end
 
       mod.define_singleton_method :allow_pkg_config do
