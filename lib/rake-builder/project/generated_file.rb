@@ -21,6 +21,7 @@ module RakeBuilder
 
       def initialize(project_, path_)
         @project = project_
+        @script = nil
         self.path = path_
 
         yield(self) if block_given?
@@ -30,8 +31,16 @@ module RakeBuilder
 
         rake_desc
         file path.to_s => [*dependencies] do |t|
-          IO.write(t.name, C8.erb_eval(@erb))
+          if @script
+            @script.call(t.name, @erb.nil? ? nil : C8.erb_eval(@erb))
+          else
+            IO.write(t.name, C8.erb_eval(@erb))
+          end
         end
+      end
+
+      def script(&block)
+        @script = block
       end
 
       def requirements

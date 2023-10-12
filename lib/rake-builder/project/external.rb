@@ -39,8 +39,8 @@ module RakeBuilder
         exec_command command_clean
       end
 
-      def provide_include(rel_path)
-        result = glob(rel_path)
+      def provide_include(rel_path, work_dir: nil)
+        result = glob(rel_path, work_dir)
 
         include_dir = result.to_s.chomp(rel_path.to_s)
 
@@ -49,14 +49,14 @@ module RakeBuilder
         nil
       end
 
-      def provide_library_static(rel_path)
-        provided_flags_link << glob(rel_path)
+      def provide_library_static(rel_path, work_dir: nil)
+        provided_flags_link << glob(rel_path, work_dir)
 
         nil
       end
 
-      def provide_library_dynamic(rel_path)
-        result = glob(rel_path)
+      def provide_library_dynamic(rel_path, work_dir: nil)
+        result = glob(rel_path, work_dir)
 
         library_dir = result.dirname
         library_short_name = result.basename.sub_ext('').sub(/^lib/, '')
@@ -68,12 +68,12 @@ module RakeBuilder
 
       private
 
-      def glob(rel_path)
+      def glob(rel_path, work_dir)
         rel_path = Utility.to_pathname(rel_path)
-        workdir = Utility.to_pathname(path)
+        work_dir = Utility.to_pathname(work_dir || path)
 
-        files = workdir.glob(Pathname.new('**').join(rel_path))
-        raise Error::FileNotFound.new(rel_path, workdir) if files.empty?
+        files = work_dir.glob(Pathname.new('**').join(rel_path))
+        raise Error::FileNotFound.new(rel_path, work_dir) if files.empty?
         raise Error::AmbigousResult, "Expected 1 file but got #{files.size}" unless files.size == 1
 
         files.first
