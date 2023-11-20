@@ -58,4 +58,20 @@ describe 'Project::GeneratedFile' do
       end.to raise_error(RakeBuilder::Error::UnsuportedType)
     end
   end
+
+  context '.script' do
+    it 'assigns different generation script' do
+      gf = p.generated_file 'name' do |t|
+        t.script do
+          42
+        end
+      end
+
+      s = gf.instance_variable_get(:@script)
+
+      expect(s.call).to be == 42
+      expect(s.call(gf.path)).to be == 42
+      expect(s.call(gf.path, 'text')).to be == 42
+    end
+  end
 end

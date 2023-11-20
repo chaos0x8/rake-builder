@@ -3,6 +3,7 @@ require_relative '../utility/to_pathname'
 require_relative '../c8/erb'
 require_relative 'attributes'
 require_relative 'project'
+require_relative 'global'
 require_relative 'tracked_list'
 require_relative '../c8/tasks'
 require 'securerandom'
@@ -61,7 +62,7 @@ module RakeBuilder
         @generated_files << file
 
         namespace :generated do
-          name = SecureRandom.hex
+          name = RakeBuilder.random_task
 
           C8.phony name => path
 

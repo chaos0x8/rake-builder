@@ -66,6 +66,12 @@ module RakeBuilder
         nil
       end
 
+      def export(&block)
+        @project.export(&block).tap do |exp|
+          exp.dependencies << path
+        end
+      end
+
       private
 
       def glob(rel_path, work_dir)
