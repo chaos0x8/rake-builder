@@ -2,62 +2,31 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-project = RakeBuilder::Project.new
-project.flags << %w[--std=c++17 -Isrc]
+file 'src/value0.hpp' do |t|
+  IO.write t.name, <<~INLINE
+    #pragma once
 
-project.generated_file 'src/value0.hpp' do |t|
-  t.script do |name|
-    IO.write name, <<~INLINE
-      #pragma once
-
-      constexpr auto value0 = 32;
-    INLINE
-  end
-
-  t.dependencies << __FILE__
+    constexpr auto value0 = 32;
+  INLINE
 end
 
-project.generated_file 'src/value1.hpp' do |t|
-  val = 70
+file 'src/value1.hpp' do |t|
+  IO.write t.name, <<~INLINE
+    #pragma once
 
-  t.erb = proc do
-    <<~INLINE
-      #pragma once
-
-      constexpr auto value1 = <%= val %>;
-    INLINE
-  end
-
-  t.script do |name, text|
-    IO.write(name, text.gsub(/70/, '99'))
-  end
-
-  t.dependencies << __FILE__
+    constexpr auto value1 = 142;
+  INLINE
 end
 
-project.generated_file 'src/value2.hpp' do |t|
-  t.script do
-    IO.write t.path, <<~INLINE
-      #pragma once
+project = RakeBuilder::Project.new flags_compile: %w[--std=c++17 -Isrc],
+                                   depend: %w[src/value0.hpp src/value1.hpp]
+project.executable path: 'bin/out',
+                   sources: Dir['src/**/*.cpp']
+project.define_tasks
 
-      constexpr auto value2 = 142;
-    INLINE
-  end
-
-  t.dependencies << __FILE__
-end
-
-project.executable 'bin/out' do |t|
-  t.sources << Dir['src/**/*.cpp']
-end
-
-desc 'Compile'
-multitask compile: project.dependencies
-
-desc 'Compile'
-task default: :compile
-
-desc 'Clean'
 task :clean do
-  project.clean
+  %w[src/value0.hpp src/value1.hpp].each do |path|
+    path = Pathname.new(path)
+    FileUtils.rm path, verbose: true if path.exist?
+  end
 end

@@ -1,48 +1,48 @@
-require_relative 'attributes'
-require_relative '../utility/read_mf'
-require_relative '../utility/clean'
+require_relative 'mixin/attributes'
+require_relative 'mixin/cleanable'
 
 module RakeBuilder
-  class Project
-    class Source
-      include Rake::DSL
-      include Attributes
+  class Source
+    include Rake::DSL
+    extend Attributes
+    extend Cleanable
 
-      attr_path
-      attr_tracked
-      attr_dependencies
+    attribute :path, Attr::Path
+    attribute :flags_compile, Attr::FlagsCompile, opts: { parent: :@parent }
+    attribute :dependencies, Attr::StringContainer, assignable: false
+    attribute :depend, Attr::StringContainer, opts: { parent: :@parent }
 
-      def initialize(project_, parent_, path_)
-        @project = project_
-        @parent = parent_
-        self.path = path_
+    attribute_collect :collect_dependencies, Attr::StringContainer,
+                      self: %i[@mf_path @o_path @depend]
 
-        dependencies << path
+    define_clean :mf_path, :o_path
 
-        mf_path = @project.path_to_mf(path)
-        dependencies << @project.rake_directory(mf_path.dirname)
+    attr_reader :mf_path, :o_path
 
-        file mf_path.to_s => [*dependencies] do |t|
-          @project.sh @project.gpp, *@parent.flags, '-c', t.source, '-M', '-MM', '-MF', t.name
-        end
+    def initialize(project, parent, path:, **opts)
+      @project = project
+      @parent = parent
 
-        o_path = @project.path_to_o(path)
-        dependencies << @project.rake_directory(o_path.dirname)
+      __init_attributes__(path: path, **opts)
+      __init_target__
+    end
 
-        file o_path.to_s => [*dependencies, *@parent.dependencies, mf_path.to_s, *Utility.read_mf(mf_path)] do |t|
-          @project.sh @project.gpp, *@parent.flags, '-c', t.source, '-o', t.name
-        end
+    def __init_target__
+      dependencies << path
+
+      @mf_path = @project.path_to_mf(path)
+      dependencies << @project.directory(mf_path.dirname)
+
+      file mf_path.to_s => [*dependencies, *depend] do |t|
+        @project.cmd_compile(*flags_compile, '-c', t.source, '-M', '-MM', '-MF', t.name)
       end
 
-      def as_object
-        @project.path_to_o(path)
-      end
+      @o_path = @project.path_to_o(path)
+      dependencies << @project.directory(o_path.dirname)
 
-      def clean
-        mf_path = @project.path_to_mf(path)
-        o_path = @project.path_to_o(path)
-
-        Utility.clean(mf_path, o_path)
+      file o_path.to_s => [*dependencies, *depend, *@parent.dependencies, mf_path.to_s,
+                           *Utility.read_mf(mf_path)] do |t|
+        @project.cmd_compile(*flags_compile, '-c', t.source, '-o', t.name)
       end
     end
   end

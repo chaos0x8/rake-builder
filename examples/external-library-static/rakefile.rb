@@ -2,34 +2,16 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-project = RakeBuilder::Project.new
-project.flags << %w[--std=c++17 -Isrc]
-
-project.external 'external/libhello' do |t|
-  t.command_compile = <<~INLINE
-    rake
-  INLINE
-
-  t.command_clean = <<~INLINE
-    rake clean
-  INLINE
-
-  t.provide_include('hello.hpp')
-  t.provide_library_static('libhello.a')
+file 'external/libhello/lib/libhello.a' do
+  sh 'cd "external/libhello" && rake'
 end
 
-project.executable 'bin/out' do |t|
-  t.sources << Dir['src/**/*.cpp']
-end
+project = RakeBuilder::Project.new flags_compile: %w[--std=c++17 -Isrc -Iexternal/libhello/src]
+project.executable path: 'bin/out',
+                   sources: Dir['src/**/*.cpp'],
+                   flags_link: %w[external/libhello/lib/libhello.a]
+project.define_tasks
 
-desc 'Compile'
-multitask compile: project.dependencies
-
-desc 'Compile'
-task default: :compile
-
-desc 'Clean'
 task :clean do
-  project.clean
-  project.clean_external
+  sh 'cd "external/libhello" && rake clean'
 end

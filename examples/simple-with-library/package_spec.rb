@@ -1,6 +1,6 @@
 require_relative '../../tests/examples_base'
 
-example_describe __FILE__ do
+example_describe __FILE__, :cmake do
   it 'Executes and produces correct output' do
     out, st = Open3.capture2e(work_dir.join('bin/out').to_s)
 

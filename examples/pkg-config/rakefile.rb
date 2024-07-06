@@ -2,21 +2,11 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-project = RakeBuilder::Project.new
-project.flags << %w[--std=c++17 -Isrc]
-project.pkg_config %w[ruby]
+pkg_config = RakeBuilder::PkgConfig.new %w[ruby]
 
-project.executable 'bin/out' do |t|
-  t.sources << Dir['src/**/*.cpp']
-end
-
-desc 'Compile'
-multitask compile: project.dependencies
-
-desc 'Compile'
-task default: :compile
-
-desc 'Clean'
-task :clean do
-  project.clean
-end
+project = RakeBuilder::Project.new flags_compile: ['--std=c++14', '-Isrc', pkg_config],
+                                   flags_link: [pkg_config]
+project.executable path: 'bin/out',
+                   sources: Dir['src/**/*.cpp']
+project.configure_cmake
+project.define_tasks

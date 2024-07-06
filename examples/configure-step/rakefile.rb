@@ -2,7 +2,7 @@ gem 'rake-builder'
 
 require 'rake-builder'
 
-C8.phony :configure do
+RakeBuilder.phony :configure do
   IO.write 'src/conf.hpp', <<~INLINE
     #pragma once
 
@@ -12,22 +12,12 @@ C8.phony :configure do
   INLINE
 end
 
-project = RakeBuilder::Project.new
-project.flags << %w[--std=c++17 -Isrc]
+project = RakeBuilder::Project.new flags_compile: %w[--std=c++17 -Isrc],
+                                   depend: %i[configure]
+project.executable path: 'bin/out',
+                   sources: Dir['src/**/*.cpp']
+project.define_tasks
 
-project.executable 'bin/out' do |t|
-  t.dependencies << %i[configure]
-  t.sources << Dir['src/**/*.cpp']
-end
-
-desc 'Compile'
-multitask compile: project.dependencies
-
-desc 'Compile'
-task default: :compile
-
-desc 'Clean'
 task :clean do
-  project.clean
   FileUtils.rm 'src/conf.hpp', verbose: true if File.exist?('src/conf.hpp')
 end

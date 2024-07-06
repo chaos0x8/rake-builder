@@ -1,23 +1,18 @@
 #!/usr/bin/ruby
 
-require_relative 'lib/rake-builder/project/generated_file'
+require_relative 'lib/rake-builder/project/project'
+require_relative 'lib/rake-builder/project/generate'
+require_relative 'lib/rake-builder/project/tasks'
 
 project = RakeBuilder::Project.new
-
-f = project.generated_file 'lib/rake-builder.rb' do |t|
-  t.tracked << Dir['lib/rake-builder/**/*.rb']
-
-  t.erb = proc do
-    <<~INLINE
-      <%- t.tracked.each do |path| -%>
-      require_relative '<%= path.relative_path_from(t.path.dirname) %>'
-      <%- end -%>
-    INLINE
-  end
-end
-
-desc 'Default task'
-task default: [f.path.to_s]
+project.generate path: 'lib/rake-builder.rb',
+                 track: Pathname.new('lib/rake-builder').glob('*/*.rb'),
+                 text: <<~TEXT
+                   <%- track.each do |p| -%>
+                   require_relative '<%= p.relative_path_from(path.dirname) %>'
+                   <%- end -%>
+                 TEXT
+project.define_tasks
 
 desc 'Executes unit tests'
 task :test do

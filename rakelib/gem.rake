@@ -4,7 +4,7 @@ namespace(:gem) do
   gemspec = Gem::Specification.load('rake-builder.gemspec')
   gemFn = "rake-builder-#{gemspec.version}.gem"
 
-  file(gemFn => %w[rake-builder.gemspec] + Dir['lib/**/*.rb']) do
+  file(gemFn => %w[rake-builder.gemspec lib/rake-builder.rb] + Dir['lib/**/*.rb']) do
     sh 'gem build rake-builder.gemspec'
     Dir['*.gem'].sort { |a, b| File.mtime(a) <=> File.mtime(b) }[0..-2].each do |fn|
       FileUtils.rm(fn, verbose: true)
